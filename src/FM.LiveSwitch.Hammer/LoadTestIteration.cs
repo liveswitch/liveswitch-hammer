@@ -40,7 +40,7 @@ namespace FM.LiveSwitch.Hammer
 
         public async Task<LoadTestError> Run(CancellationToken cancellationToken)
         {
-            var result = LoadTestError.None;
+            LoadTestError result;
             try
             {
                 result = await RegisterClients(cancellationToken).ConfigureAwait(false);

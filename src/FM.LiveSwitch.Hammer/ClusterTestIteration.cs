@@ -40,11 +40,6 @@ namespace FM.LiveSwitch.Hammer
         private VideoTrack _RemoteVideoTrack1;
         private VideoTrack _RemoteVideoTrack2;
 
-        private AudioStream _AudioStream1;
-        private AudioStream _AudioStream2;
-        private VideoStream _VideoStream1;
-        private VideoStream _VideoStream2;
-
         private McuConnection _Connection1;
         private McuConnection _Connection2;
 
@@ -59,7 +54,7 @@ namespace FM.LiveSwitch.Hammer
 
         public async Task<ClusterTestError> Run(CancellationToken cancellationToken)
         {
-            var error = ClusterTestError.None;
+            ClusterTestError error;
             try
             {
                 error = await RegisterClients(cancellationToken).ConfigureAwait(false);
@@ -271,22 +266,22 @@ namespace FM.LiveSwitch.Hammer
         {
             Console.Error.WriteLine("  Opening connections...");
 
-            _AudioStream1 = new AudioStream(_LocalAudioTrack1, _RemoteAudioTrack1);
-            _AudioStream2 = new AudioStream(_LocalAudioTrack2, _RemoteAudioTrack2);
-            _VideoStream1 = new VideoStream(_LocalVideoTrack1, _RemoteVideoTrack1);
-            _VideoStream2 = new VideoStream(_LocalVideoTrack2, _RemoteVideoTrack2);
+            var audioStream1 = new AudioStream(_LocalAudioTrack1, _RemoteAudioTrack1);
+            var audioStream2 = new AudioStream(_LocalAudioTrack2, _RemoteAudioTrack2);
+            var videoStream1 = new VideoStream(_LocalVideoTrack1, _RemoteVideoTrack1);
+            var videoStream2 = new VideoStream(_LocalVideoTrack2, _RemoteVideoTrack2);
 
-            _AudioStream1.OnProcessFrame += (f) => _AudioSendCount1++;
-            _AudioStream2.OnProcessFrame += (f) => _AudioSendCount2++;
-            _AudioStream1.OnRaiseFrame += (f) => _AudioReceiveCount1++;
-            _AudioStream2.OnRaiseFrame += (f) => _AudioReceiveCount2++;
-            _VideoStream1.OnProcessFrame += (f) => _VideoSendCount1++;
-            _VideoStream2.OnProcessFrame += (f) => _VideoSendCount2++;
-            _VideoStream1.OnRaiseFrame += (f) => _VideoReceiveCount1++;
-            _VideoStream2.OnRaiseFrame += (f) => _VideoReceiveCount2++;
+            audioStream1.OnProcessFrame += (f) => _AudioSendCount1++;
+            audioStream2.OnProcessFrame += (f) => _AudioSendCount2++;
+            audioStream1.OnRaiseFrame += (f) => _AudioReceiveCount1++;
+            audioStream2.OnRaiseFrame += (f) => _AudioReceiveCount2++;
+            videoStream1.OnProcessFrame += (f) => _VideoSendCount1++;
+            videoStream2.OnProcessFrame += (f) => _VideoSendCount2++;
+            videoStream1.OnRaiseFrame += (f) => _VideoReceiveCount1++;
+            videoStream2.OnRaiseFrame += (f) => _VideoReceiveCount2++;
 
-            _Connection1 = _Channel1.CreateMcuConnection(_AudioStream1, _VideoStream1);
-            _Connection2 = _Channel2.CreateMcuConnection(_AudioStream2, _VideoStream2);
+            _Connection1 = _Channel1.CreateMcuConnection(audioStream1, videoStream1);
+            _Connection2 = _Channel2.CreateMcuConnection(audioStream2, videoStream2);
 
             var result = await Task.WhenAny(
                 Task.Delay(Timeout.Infinite, cancellationToken),
