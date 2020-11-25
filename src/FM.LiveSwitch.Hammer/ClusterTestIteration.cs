@@ -4,8 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Opus = FM.LiveSwitch.Opus;
-using Vp8 = FM.LiveSwitch.Vp8;
 
 namespace FM.LiveSwitch.Hammer
 {
@@ -139,6 +137,7 @@ namespace FM.LiveSwitch.Hammer
             // check faulted
             if (result.IsFaulted)
             {
+                Console.Error.WriteLine($"  Could not register clients: {result.Exception}");
                 return ClusterTestError.ClientRegisterFailed;
             }
 
@@ -179,6 +178,7 @@ namespace FM.LiveSwitch.Hammer
             // check faulted
             if (result.IsFaulted)
             {
+                Console.Error.WriteLine($"  Could not join channels: {result.Exception}");
                 return ClusterTestError.ChannelJoinFailed;
             }
 
@@ -235,6 +235,7 @@ namespace FM.LiveSwitch.Hammer
             // check faulted
             if (result.IsFaulted)
             {
+                Console.Error.WriteLine($"  Could not start tracks: {result.Exception}");
                 return ClusterTestError.TrackStartFailed;
             }
 
@@ -300,6 +301,7 @@ namespace FM.LiveSwitch.Hammer
             // check faulted
             if (result.IsFaulted)
             {
+                Console.Error.WriteLine($"  Could not open connections: {result.Exception}");
                 return ClusterTestError.ConnectionOpenFailed;
             }
 
@@ -321,7 +323,7 @@ namespace FM.LiveSwitch.Hammer
             Console.Error.WriteLine("  Verifying media...");
 
             await Task.WhenAny(
-                Task.Delay(Options.MediaTimeout, cancellationToken),
+                Task.Delay(Options.MediaTimeout * 1000, cancellationToken),
                 Task.WhenAll(
                     _AudioVerify1.Task,
                     _AudioVerify2.Task,

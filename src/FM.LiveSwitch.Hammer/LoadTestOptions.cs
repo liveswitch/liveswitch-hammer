@@ -28,5 +28,8 @@ namespace FM.LiveSwitch.Hammer
 
         [Option("channel-burst", Default = false, HelpText = "Group traffic bursts by channel.")]
         public bool ChannelBurst { get; set; }
+
+        [Option("pause-timeout", Default = 0, HelpText = "The number of seconds to wait before closing connections.")]
+        public int PauseTimeout { get; set; }
     }
 }

@@ -9,23 +9,23 @@ The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSw
 Use `dotnet publish` to create a single, self-contained file for a specific platform/architecture:
 
 ### Windows
-```shell
+```none
 dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o win
 ```
 
 ### macOS
-```shell
+```none
 dotnet publish -r osx-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o osx
 ```
 
 ### Linux
-```shell
+```none
 dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o linux
 ```
 
 Alternatively, use `dotnet build` to create a platform-agnostic bundle (the .NET Core runtime must be installed):
 
-```shell
+```none
 dotnet build
 ```
 
@@ -33,13 +33,13 @@ Using this approach will generate a library instead of an executable. Use `dotne
 
 ## Usage
 
-```shell
+```none
 lsconnect [verb] [options]
 ```
 
 ### Verbs
 
-```shell
+```none
   cluster    Tests scenarios that evoke clustering edge cases.
 
   load       Tests parallel and sequential load scenarios.
@@ -54,11 +54,11 @@ This test is intended to be used with multiple Media Servers that cluster togeth
 1.  Set the Deployment > Clustering > Strategy to `RoundRobin`.
 2.  Assign unique regions to the Media Servers and provide them as options to `lshammer`.
 
-```shell
+```none
   --iteration-count       (Default: 1000) The number of iterations to run.
 
-  --media-timeout         (Default: 5000) The number of milliseconds to wait for
-                          media to flow.
+  --media-timeout         (Default: 5) The number of seconds to wait for media
+                          to flow.
 
   --user1                 (Default: user1) The user ID of the first client.
 
@@ -89,7 +89,7 @@ There are two ways to parallelize the channel join and connection open tasks:
 1.  Distribute evenly across channels. This is the default behaviour.
 2.  Fill up one channel before moving to the next, enabled by `--channel-burst`.
 
-```shell
+```none
   --iteration-count              (Default: 1) The number of iterations to run.
 
   --client-count                 (Default: 1) The number of clients to register.
@@ -111,6 +111,9 @@ There are two ways to parallelize the channel join and connection open tasks:
 
   --channel-burst                (Default: false) Group traffic bursts by
                                  channel.
+
+  --pause-timeout                (Default: 0) The number of seconds to wait
+                                 before closing connections.
 
   -g, --gateway-url              (Default: http://localhost:8080/sync) The
                                  Gateway URL.
