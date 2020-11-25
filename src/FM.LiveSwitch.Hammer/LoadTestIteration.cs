@@ -117,6 +117,7 @@ namespace FM.LiveSwitch.Hammer
                 // check faulted
                 if (result.IsFaulted)
                 {
+                    Console.Error.WriteLine($"  Could not register clients: {result.Exception}");
                     return LoadTestError.ClientRegisterFailed;
                 }
             }
@@ -186,6 +187,7 @@ namespace FM.LiveSwitch.Hammer
                 // check faulted
                 if (result.IsFaulted)
                 {
+                    Console.Error.WriteLine($"  Could not join channels: {result.Exception}");
                     return LoadTestError.ChannelJoinFailed;
                 }
             }
@@ -265,6 +267,7 @@ namespace FM.LiveSwitch.Hammer
                 // check faulted
                 if (result.IsFaulted)
                 {
+                    Console.Error.WriteLine($"  Could not open connections: {result.Exception}");
                     return LoadTestError.ConnectionOpenFailed;
                 }
             }
@@ -282,12 +285,12 @@ namespace FM.LiveSwitch.Hammer
                 await Task.WhenAll(
                     clientChannelConnections.Select(async ccc =>
                     {
-                        await ccc.Connection.Close();
+                        await ccc.Connection?.Close();
 
-                        ccc.LocalAudioTrack.Destroy();
-                        ccc.LocalVideoTrack.Destroy();
-                        ccc.RemoteAudioTrack.Destroy();
-                        ccc.RemoteVideoTrack.Destroy();
+                        ccc.LocalAudioTrack?.Destroy();
+                        ccc.LocalVideoTrack?.Destroy();
+                        ccc.RemoteAudioTrack?.Destroy();
+                        ccc.RemoteVideoTrack?.Destroy();
                     })
                 ).ConfigureAwait(false);
             }

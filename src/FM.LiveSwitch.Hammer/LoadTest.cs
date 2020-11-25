@@ -15,17 +15,29 @@ namespace FM.LiveSwitch.Hammer
 
         public async Task<LoadTestError> Run(CancellationToken cancellationToken)
         {
-            for (var i = 0; i < Options.IterationCount; i++)
+            try
             {
-                Console.Error.WriteLine($"Test #{i + 1}");
-
-                var result = await new LoadTestIteration(Options).Run(cancellationToken).ConfigureAwait(false);
-                if (result != LoadTestError.None)
+                for (var i = 0; i < Options.IterationCount; i++)
                 {
-                    return result;
+                    Console.Error.WriteLine($"Test #{i + 1}");
+
+                    var error = await new LoadTestIteration(Options).Run(cancellationToken).ConfigureAwait(false);
+                    if (error != LoadTestError.None)
+                    {
+                        if (error == LoadTestError.Cancelled)
+                        {
+                            Console.Error.WriteLine("User cancelled.");
+                        }
+                        return error;
+                    }
                 }
+                return LoadTestError.None;
             }
-            return LoadTestError.None;
+            catch (TaskCanceledException)
+            {
+                Console.Error.WriteLine("User cancelled.");
+                return LoadTestError.Cancelled;
+            }
         }
     }
 }
