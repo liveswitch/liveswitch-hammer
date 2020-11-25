@@ -1,0 +1,53 @@
+name: build
+
+on:
+  push:
+    branches: [ master, develop ]
+  pull_request:
+    branches: [ master, develop ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 3.1.x
+    - name: Install dependencies
+      run: dotnet restore
+    - name: Run tests
+      run: dotnet test src/FM.LiveSwitch.Hammer.Test/FM.LiveSwitch.Hammer.Test.csproj
+    - name: Build library
+      run: dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -c Release -o artifacts/lib
+    - name: Build for Windows
+      run: dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r win-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o artifacts/win-x64
+    - name: Build for macOS
+      run: dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r osx-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o artifacts/osx-x64
+    - name: Build for Linux
+      run: dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r linux-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o artifacts/linux-x64
+    - name: Upload library
+      uses: actions/upload-artifact@v2
+      with:
+        name: lib
+        path: artifacts/lib/lshammer.dll
+    - name: Upload Windows artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: win-x64
+        path: artifacts/win-x64
+    - name: Upload macOS artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: osx-x64
+        path: artifacts/osx-x64
+    - name: Upload Linux artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: linux-x64
+        path: artifacts/linux-x64

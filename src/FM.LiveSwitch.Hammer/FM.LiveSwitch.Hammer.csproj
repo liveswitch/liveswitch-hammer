@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+    <AssemblyName>lshammer</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="FM.LiveSwitch" Version="1.10.0.34671" />
+    <PackageReference Include="FM.LiveSwitch.Opus" Version="1.10.0.34671" />
+    <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.10.0.34671" />
+  </ItemGroup>
+
+</Project>
