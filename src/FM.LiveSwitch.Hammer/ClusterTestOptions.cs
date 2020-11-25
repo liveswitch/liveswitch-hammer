@@ -8,7 +8,7 @@ namespace FM.LiveSwitch.Hammer
         [Option("iteration-count", Default = 1000, HelpText = "The number of iterations to run.")]
         public int IterationCount { get; set; }
 
-        [Option("media-timeout", Default = 5000, HelpText = "The number of milliseconds to wait for media to flow.")]
+        [Option("media-timeout", Default = 5, HelpText = "The number of seconds to wait for media to flow.")]
         public int MediaTimeout { get; set; }
 
         [Option("user1", Default = "user1", HelpText = "The user ID of the first client.")]

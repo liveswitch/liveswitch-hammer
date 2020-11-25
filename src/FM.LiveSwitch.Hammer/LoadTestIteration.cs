@@ -64,6 +64,12 @@ namespace FM.LiveSwitch.Hammer
                         {
                             return result;
                         }
+
+                        result = await Pause(cancellationToken).ConfigureAwait(false);
+                        if (result != LoadTestError.None)
+                        {
+                            return result;
+                        }
                     }
                     finally
                     {
@@ -223,10 +229,22 @@ namespace FM.LiveSwitch.Hammer
                     Task.WhenAll(
                         clientChannelConnections.Select(async ccc =>
                         {
-                            ccc.LocalAudioTrack = CreateLocalAudioTrack();
-                            ccc.LocalVideoTrack = CreateLocalVideoTrack();
-                            ccc.RemoteAudioTrack = CreateRemoteAudioTrack();
-                            ccc.RemoteVideoTrack = CreateRemoteVideoTrack();
+                            ccc.LocalAudioTrack = new AudioTrack(new NullAudioSource(new Opus.Format
+                            {
+                                IsPacketized = true
+                            }));
+                            ccc.LocalVideoTrack = new VideoTrack(new NullVideoSource(new Vp8.Format
+                            {
+                                IsPacketized = true
+                            }));
+                            ccc.RemoteAudioTrack = new AudioTrack(new NullAudioSink(new Opus.Format
+                            {
+                                IsPacketized = true
+                            }));
+                            ccc.RemoteVideoTrack = new VideoTrack(new NullVideoSink(new Vp8.Format
+                            {
+                                IsPacketized = true
+                            }));
 
                             ccc.Connection = ccc.Channel.CreateMcuConnection(
                                 new AudioStream(ccc.LocalAudioTrack, ccc.RemoteAudioTrack),
@@ -275,36 +293,19 @@ namespace FM.LiveSwitch.Hammer
             }
         }
 
-        private AudioTrack CreateLocalAudioTrack()
+        private async Task<LoadTestError> Pause(CancellationToken cancellationToken)
         {
-            return new AudioTrack(new NullAudioSource(new Opus.Format
-            {
-                IsPacketized = true
-            }));
-        }
+            Console.Error.WriteLine($" Pausing for {Options.PauseTimeout} seconds...");
 
-        private AudioTrack CreateRemoteAudioTrack()
-        {
-            return new AudioTrack(new NullAudioSink(new Opus.Format
-            {
-                IsPacketized = true
-            }));
-        }
+            await Task.Delay(Options.PauseTimeout * 1000, cancellationToken).ConfigureAwait(false);
 
-        private VideoTrack CreateLocalVideoTrack()
-        {
-            return new VideoTrack(new NullVideoSource(new Vp8.Format
+            // check cancellation
+            if (cancellationToken.IsCancellationRequested)
             {
-                IsPacketized = true
-            }));
-        }
+                return LoadTestError.Cancelled;
+            }
 
-        private VideoTrack CreateRemoteVideoTrack()
-        {
-            return new VideoTrack(new NullVideoSink(new Vp8.Format
-            {
-                IsPacketized = true
-            }));
+            return LoadTestError.None;
         }
     }
 }
