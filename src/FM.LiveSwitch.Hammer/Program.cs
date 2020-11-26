@@ -21,6 +21,27 @@ namespace FM.LiveSwitch.Hammer
                 LoadTestOptions
             >(args);
 
+            result.MapResult(
+                (ClusterTestOptions options) =>
+                {
+                    return Run(new ClusterTest(options).Run).GetAwaiter().GetResult();
+                },
+                (LoadTestOptions options) =>
+                {
+                    return Run(new LoadTest(options).Run).GetAwaiter().GetResult();
+                },
+                errors =>
+                {
+                    var helpText = HelpText.AutoBuild(result);
+                    helpText.Copyright = "Copyright (C) 2020 Frozen Mountain Software Ltd.";
+                    helpText.AddEnumValuesToHelpText = true;
+                    Console.Error.Write(helpText);
+                    return 1;
+                });
+        }
+
+        private static async Task<int> Run(Func<CancellationToken, Task> func)
+        {
             var cancellationTokenSource = new CancellationTokenSource();
             _ = Task.Run(() =>
             {
@@ -34,29 +55,46 @@ namespace FM.LiveSwitch.Hammer
                 }
             });
 
-            result.MapResult(
-                (ClusterTestOptions options) =>
-                {
-                    return Task.Run(async () =>
-                    {
-                        return (int)await new ClusterTest(options).Run(cancellationTokenSource.Token);
-                    }).GetAwaiter().GetResult();
-                },
-                (LoadTestOptions options) =>
-                {
-                    return Task.Run(async () =>
-                    {
-                        return (int)await new LoadTest(options).Run(cancellationTokenSource.Token);
-                    }).GetAwaiter().GetResult();
-                },
-                errors =>
-                {
-                    var helpText = HelpText.AutoBuild(result);
-                    helpText.Copyright = "Copyright (C) 2020 Frozen Mountain Software Ltd.";
-                    helpText.AddEnumValuesToHelpText = true;
-                    Console.Error.Write(helpText);
-                    return 1;
-                });
+            try
+            {
+                await func(cancellationTokenSource.Token).ConfigureAwait(false);
+                return 0;
+            }
+            catch (TaskCanceledException ex)
+            {
+                LogException(ex);
+                return 1;
+            }
+            catch (ClientRegisterException ex)
+            {
+                LogException(ex);
+                return 2;
+            }
+            catch (ChannelJoinException ex)
+            {
+                LogException(ex);
+                return 3;
+            }
+            catch (TrackStartException ex)
+            {
+                LogException(ex);
+                return 4;
+            }
+            catch (ConnectionOpenException ex)
+            {
+                LogException(ex);
+                return 5;
+            }
+            catch (MediaStreamFailedException ex)
+            {
+                LogException(ex);
+                return 6;
+            }
+        }
+
+        private static void LogException(Exception ex)
+        {
+            Console.Error.WriteLine($"{ex.Message} {ex.InnerException?.Message}".Trim());
         }
     }
 }
