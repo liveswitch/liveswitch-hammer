@@ -66,6 +66,8 @@ namespace FM.LiveSwitch.Hammer
             }
         }
 
+        #region Register and Unregister Clients
+
         private async Task RegisterClients(CancellationToken cancellationToken)
         {
             _Clients = Enumerable.Range(0, Options.ClientCount).Select(_ => new Client(Options.GatewayUrl, Options.ApplicationId)).ToArray();
@@ -113,6 +115,10 @@ namespace FM.LiveSwitch.Hammer
                 ).ConfigureAwait(false);
             }
         }
+
+        #endregion
+
+        #region Join and Leave Channels
 
         private async Task JoinChannels(CancellationToken cancellationToken)
         {
@@ -178,6 +184,10 @@ namespace FM.LiveSwitch.Hammer
                 ).ConfigureAwait(false);
             }
         }
+
+        #endregion
+
+        #region Open and Close Connections
 
         private async Task OpenConnections(CancellationToken cancellationToken)
         {
@@ -268,5 +278,7 @@ namespace FM.LiveSwitch.Hammer
             // check cancellation
             cancellationToken.ThrowIfCancellationRequested();
         }
+
+        #endregion
     }
 }
