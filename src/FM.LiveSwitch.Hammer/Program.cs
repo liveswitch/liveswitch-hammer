@@ -18,7 +18,8 @@ namespace FM.LiveSwitch.Hammer
 
             var result = parser.ParseArguments<
                 ClusterTestOptions,
-                LoadTestOptions
+                LoadTestOptions,
+                ScanTestOptions
             >(args);
 
             result.MapResult(
@@ -29,6 +30,10 @@ namespace FM.LiveSwitch.Hammer
                 (LoadTestOptions options) =>
                 {
                     return Run(new LoadTest(options).Run).GetAwaiter().GetResult();
+                },
+                (ScanTestOptions options) =>
+                {
+                    return Run(new ScanTest(options).Run).GetAwaiter().GetResult();
                 },
                 errors =>
                 {
@@ -58,6 +63,10 @@ namespace FM.LiveSwitch.Hammer
             try
             {
                 await func(cancellationTokenSource.Token).ConfigureAwait(false);
+
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Success!");
+
                 return 0;
             }
             catch (TaskCanceledException ex)
@@ -89,6 +98,11 @@ namespace FM.LiveSwitch.Hammer
             {
                 LogException(ex);
                 return 6;
+            }
+            catch (CertificateExpiringException ex)
+            {
+                LogException(ex);
+                return 7;
             }
         }
 

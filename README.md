@@ -43,6 +43,8 @@ lsconnect [verb] [options]
   cluster    Tests scenarios that evoke clustering edge cases.
 
   load       Tests parallel and sequential load scenarios.
+
+  scan       Tests individual Media Servers for connectivity and media flow.
 ```
 
 ## capture
@@ -60,17 +62,13 @@ This test is intended to be used with multiple Media Servers that cluster togeth
   --media-timeout         (Default: 5) The number of seconds to wait for media
                           to flow.
 
-  --user1                 (Default: user1) The user ID of the first client.
+  --tag-1                 The first client's tag.
 
-  --user2                 (Default: user2) The user ID of the second client.
+  --tag-2                 The second client's tag.
 
-  --device1               (Default: device1) The device ID of the first client.
+  --region1               The first client's region.
 
-  --device2               (Default: device2) The device ID of the second client.
-
-  --region1               (Default: region1) The region of the first client.
-
-  --region2               (Default: region2) The region of the second client.
+  --region2               The second client's region.
 
   -g, --gateway-url       (Default: http://localhost:8080/sync) The Gateway URL.
 
@@ -90,40 +88,76 @@ There are two ways to parallelize the channel join and connection open tasks:
 2.  Fill up one channel before moving to the next, enabled by `--channel-burst`.
 
 ```none
-  --iteration-count              (Default: 1) The number of iterations to run.
+  --iteration-count       (Default: 1) The number of iterations to run.
 
-  --client-count                 (Default: 1) The number of clients to register.
+  --client-count          (Default: 1) The number of clients to register.
 
-  --channel-count                (Default: 1) The number of channels for each
-                                 client to join.
+  --channel-count         (Default: 1) The number of channels for each client to
+                          join.
 
-  --connection-count             (Default: 1) The number of connections in each
-                                 channel to open.
+  --connection-count      (Default: 1) The number of connections in each channel
+                          to open.
 
-  --parallel-client-registers    (Default: 1) The number of parallel client
-                                 register operations.
+  --parallelism           (Default: 1) The number of parallel operations to
+                          allow.
 
-  --parallel-channel-joins       (Default: 1) The number of parallel channel
-                                 join operations.
+  --channel-burst         (Default: false) Group traffic bursts by channel.
 
-  --parallel-connection-opens    (Default: 1) The number of parallel connection
-                                 open operations.
+  --pause-timeout         (Default: 0) The number of seconds to wait before
+                          closing connections.
 
-  --channel-burst                (Default: false) Group traffic bursts by
-                                 channel.
+  -g, --gateway-url       (Default: http://localhost:8080/sync) The Gateway URL.
 
-  --pause-timeout                (Default: 0) The number of seconds to wait
-                                 before closing connections.
+  -a, --application-id    (Default: my-app-id) The application identifier.
 
-  -g, --gateway-url              (Default: http://localhost:8080/sync) The
-                                 Gateway URL.
+  -s, --shared-secret     (Default: --replaceThisWithYourOwnSharedSecret--) The
+                          shared secret.
+```
 
-  -a, --application-id           (Default: my-app-id) The application
-                                 identifier.
+## scan
 
-  -s, --shared-secret            (Default:
-                                 --replaceThisWithYourOwnSharedSecret--) The
-                                 shared secret.
+The `scan` verb connects in sequence to each Media Server in a cluster using various configurations for network traversal. Individual configurations can be disabled as needed for deployments with specific requirements.
+
+For TURNS, certificate expiry can also be tested. If a certificate is expiring within a configurable number of days, an error will be returned.
+
+```none
+  --api-key               Required. The API key to authenticate requests.
+
+  --api-base-url          (Default: http://localhost:9090/admin/api) The base
+                          URL of the Gateway API service.
+
+  --no-host               (Default: false) Do not test host-only connectivity.
+
+  --no-stun               (Default: false) Do not test STUN-only connectivity.
+
+  --no-turn-udp           (Default: false) Do not test TURN/UDP-only
+                          connectivity.
+
+  --no-turn-tcp           (Default: false) Do not test TURN/TCP-only
+                          connectivity.
+
+  --no-turns              (Default: false) Do not test TURNS-only connectivity.
+
+  --min-cert-days         (Default: 7) The minimum number of days to allow until
+                          certificate expiry.
+
+  --max-attempts          (Default: 3) The max number of attempts for a given
+                          Media Server.
+
+  --attempt-interval      (Default: 5) The interval, in seconds, between failed
+                          attempts.
+
+  --media-timeout         (Default: 5) The number of seconds to wait for media
+                          to flow.
+
+  --tag                   The client's tag.
+
+  -g, --gateway-url       (Default: http://localhost:8080/sync) The Gateway URL.
+
+  -a, --application-id    (Default: my-app-id) The application identifier.
+
+  -s, --shared-secret     (Default: --replaceThisWithYourOwnSharedSecret--) The
+                          shared secret.
 ```
 
 ## Contact

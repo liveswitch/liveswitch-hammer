@@ -72,11 +72,14 @@ namespace FM.LiveSwitch.Hammer
         {
             _Clients = Enumerable.Range(0, Options.ClientCount).Select(_ => new Client(Options.GatewayUrl, Options.ApplicationId)).ToArray();
 
-            for (var i = 0; i < _Clients.Count(); i += Options.ParallelClientRegisters)
+            for (var i = 0; i < _Clients.Count(); i += Options.Parallelism)
             {
-                var clients = _Clients.Skip(i).Take(Options.ParallelClientRegisters);
+                var clients = _Clients.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Registering clients (group #{1 + i / Options.ParallelClientRegisters}, {clients.Count()} register operations)...");
+                Console.Error.WriteLine($"Registering {clients.Count()} clients (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 var result = await Task.WhenAny(
                     Task.Delay(Timeout.Infinite, cancellationToken),
@@ -88,6 +91,8 @@ namespace FM.LiveSwitch.Hammer
                     )
                 ).ConfigureAwait(false);
 
+                stopwatch.Stop();
+
                 // check cancellation
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -96,16 +101,21 @@ namespace FM.LiveSwitch.Hammer
                 {
                     throw new ClientRegisterException("One or more clients could not be registered.", result.Exception);
                 }
+
+                Console.Error.WriteLine($"Registering completed in {stopwatch.ElapsedMilliseconds}ms ({clients.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
         private async Task UnregisterClients()
         {
-            for (var i = 0; i < _Clients.Count(); i += Options.ParallelClientRegisters)
+            for (var i = 0; i < _Clients.Count(); i += Options.Parallelism)
             {
-                var clients = _Clients.Skip(i).Take(Options.ParallelClientRegisters);
+                var clients = _Clients.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Unregistering clients (group #{1 + i / Options.ParallelClientRegisters}, {clients.Count()} unregister operations)...");
+                Console.Error.WriteLine($"Unregistering {clients.Count()} clients (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 await Task.WhenAll(
                     clients.Select(client =>
@@ -113,6 +123,10 @@ namespace FM.LiveSwitch.Hammer
                         return client.Unregister().AsTask(TaskCreationOptions.RunContinuationsAsynchronously);
                     })
                 ).ConfigureAwait(false);
+
+                stopwatch.Stop();
+
+                Console.Error.WriteLine($"Unregistering completed in {stopwatch.ElapsedMilliseconds}ms ({clients.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
@@ -141,11 +155,14 @@ namespace FM.LiveSwitch.Hammer
                 })).ToArray();
             }
 
-            for (var i = 0; i < _ClientChannels.Count(); i += Options.ParallelChannelJoins)
+            for (var i = 0; i < _ClientChannels.Count(); i += Options.Parallelism)
             {
-                var clientChannels = _ClientChannels.Skip(i).Take(Options.ParallelChannelJoins);
+                var clientChannels = _ClientChannels.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Joining channels (group #{1 + i / Options.ParallelChannelJoins}, {clientChannels.Count()} join operations)...");
+                Console.Error.WriteLine($"Joining {clientChannels.Count()} channels (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 var result = await Task.WhenAny(
                     Task.Delay(Timeout.Infinite, cancellationToken),
@@ -157,6 +174,8 @@ namespace FM.LiveSwitch.Hammer
                     )
                 ).ConfigureAwait(false);
 
+                stopwatch.Stop();
+
                 // check cancellation
                 cancellationToken.ThrowIfCancellationRequested();
 
@@ -165,16 +184,21 @@ namespace FM.LiveSwitch.Hammer
                 {
                     throw new ChannelJoinException("One or more channels could not be joined.", result.Exception);
                 }
+
+                Console.Error.WriteLine($"Joining completed in {stopwatch.ElapsedMilliseconds}ms ({clientChannels.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
         private async Task LeaveChannels()
         {
-            for (var i = 0; i < _ClientChannels.Count(); i += Options.ParallelChannelJoins)
+            for (var i = 0; i < _ClientChannels.Count(); i += Options.Parallelism)
             {
-                var clientChannels = _ClientChannels.Skip(i).Take(Options.ParallelChannelJoins);
+                var clientChannels = _ClientChannels.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Leaving channels (group #{1 + i / Options.ParallelChannelJoins}, {clientChannels.Count()} leave operations)...");
+                Console.Error.WriteLine($"Leaving {clientChannels.Count()} channels (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 await Task.WhenAll(
                     clientChannels.Select(cc =>
@@ -182,6 +206,10 @@ namespace FM.LiveSwitch.Hammer
                         return cc.Client.Leave(cc.ChannelId).AsTask(TaskCreationOptions.RunContinuationsAsynchronously);
                     })
                 ).ConfigureAwait(false);
+
+                stopwatch.Stop();
+
+                Console.Error.WriteLine($"Leaving completed in {stopwatch.ElapsedMilliseconds}ms ({clientChannels.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
@@ -198,16 +226,19 @@ namespace FM.LiveSwitch.Hammer
                 Channel = cc.Channel
             })).ToArray();
 
-            for (var i = 0; i < _ClientChannelConnections.Count(); i += Options.ParallelConnectionOpens)
+            for (var i = 0; i < _ClientChannelConnections.Count(); i += Options.Parallelism)
             {
-                var clientChannelConnections = _ClientChannelConnections.Skip(i).Take(Options.ParallelConnectionOpens);
+                var clientChannelConnections = _ClientChannelConnections.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Opening connections (group #{1 + i / Options.ParallelConnectionOpens}, {clientChannelConnections.Count()} open operations)...");
+                Console.Error.WriteLine($"Opening {clientChannelConnections.Count()} connections (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 var result = await Task.WhenAny(
                     Task.Delay(Timeout.Infinite, cancellationToken),
                     Task.WhenAll(
-                        clientChannelConnections.Select(async ccc =>
+                        clientChannelConnections.Select(ccc =>
                         {
                             ccc.LocalAudioTrack = new AudioTrack(new NullAudioSource(new Opus.Format
                             {
@@ -231,10 +262,12 @@ namespace FM.LiveSwitch.Hammer
                                 new VideoStream(ccc.LocalVideoTrack, ccc.RemoteVideoTrack)
                             );
 
-                            await ccc.Connection.Open();
+                            return ccc.Connection.Open().AsTaskAsync();
                         })
                     )
                 ).ConfigureAwait(false);
+
+                stopwatch.Stop();
 
                 // check cancellation
                 cancellationToken.ThrowIfCancellationRequested();
@@ -244,16 +277,21 @@ namespace FM.LiveSwitch.Hammer
                 {
                     throw new ConnectionOpenException("One or more connections could not be opened.", result.Exception);
                 }
+
+                Console.Error.WriteLine($"Opening completed in {stopwatch.ElapsedMilliseconds}ms ({clientChannelConnections.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
         private async Task CloseConnections()
         {
-            for (var i = 0; i < _ClientChannelConnections.Count(); i += Options.ParallelConnectionOpens)
+            for (var i = 0; i < _ClientChannelConnections.Count(); i += Options.Parallelism)
             {
-                var clientChannelConnections = _ClientChannelConnections.Skip(i).Take(Options.ParallelConnectionOpens);
+                var clientChannelConnections = _ClientChannelConnections.Skip(i).Take(Options.Parallelism);
 
-                Console.Error.WriteLine($" Closing connections (group #{1 + i / Options.ParallelConnectionOpens}, {clientChannelConnections.Count()} close operations)...");
+                Console.Error.WriteLine($"Closing {clientChannelConnections.Count()} connections (group #{1 + i / Options.Parallelism})...");
+
+                var stopwatch = new ManagedStopwatch();
+                stopwatch.Start();
 
                 await Task.WhenAll(
                     clientChannelConnections.Select(async ccc =>
@@ -266,12 +304,16 @@ namespace FM.LiveSwitch.Hammer
                         ccc.RemoteVideoTrack?.Destroy();
                     })
                 ).ConfigureAwait(false);
+
+                stopwatch.Stop();
+
+                Console.Error.WriteLine($"Closing completed in {stopwatch.ElapsedMilliseconds}ms ({clientChannelConnections.Count() * 1000.0 / stopwatch.ElapsedMilliseconds:n2}/s).");
             }
         }
 
         private async Task Pause(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine($" Pausing for {Options.PauseTimeout} seconds...");
+            Console.Error.WriteLine($"Pausing for {Options.PauseTimeout} seconds...");
 
             await Task.Delay(Options.PauseTimeout * 1000, cancellationToken).ConfigureAwait(false);
 
