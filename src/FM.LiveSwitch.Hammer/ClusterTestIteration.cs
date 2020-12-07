@@ -16,80 +16,21 @@ namespace FM.LiveSwitch.Hammer
             Options = options;
         }
 
-        private string _ChannelId;
-
-        private Client _Client1;
-        private Client _Client2;
-
-        private Channel _Channel1;
-        private Channel _Channel2;
-
-        private TaskCompletionSource<bool> _AudioVerify1;
-        private TaskCompletionSource<bool> _AudioVerify2;
-        private TaskCompletionSource<bool> _VideoVerify1;
-        private TaskCompletionSource<bool> _VideoVerify2;
-
-        private AudioTrack _LocalAudioTrack1;
-        private AudioTrack _LocalAudioTrack2;
-        private VideoTrack _LocalVideoTrack1;
-        private VideoTrack _LocalVideoTrack2;
-        private AudioTrack _RemoteAudioTrack1;
-        private AudioTrack _RemoteAudioTrack2;
-        private VideoTrack _RemoteVideoTrack1;
-        private VideoTrack _RemoteVideoTrack2;
-
-        private McuConnection _Connection1;
-        private McuConnection _Connection2;
-
-        private int _AudioSendCount1;
-        private int _AudioSendCount2;
-        private int _AudioReceiveCount1;
-        private int _AudioReceiveCount2;
-        private int _VideoSendCount1;
-        private int _VideoSendCount2;
-        private int _VideoReceiveCount1;
-        private int _VideoReceiveCount2;
-
-        public async Task<ClusterTestError> Run(CancellationToken cancellationToken)
+        public async Task Run(CancellationToken cancellationToken)
         {
-            ClusterTestError error;
             try
             {
-                error = await RegisterClients(cancellationToken).ConfigureAwait(false);
-                if (error != ClusterTestError.None)
-                {
-                    return error;
-                }
-
+                await RegisterClients(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    error = await JoinChannel(cancellationToken).ConfigureAwait(false);
-                    if (error != ClusterTestError.None)
-                    {
-                        return error;
-                    }
-
+                    await JoinChannel(cancellationToken).ConfigureAwait(false);
                     try
                     {
-                        error = await StartTracks(cancellationToken).ConfigureAwait(false);
-                        if (error != ClusterTestError.None)
-                        {
-                            return error;
-                        }
-
+                        await StartTracks(cancellationToken).ConfigureAwait(false);
                         try
                         {
-                            error = await OpenConnections(cancellationToken).ConfigureAwait(false);
-                            if (error != ClusterTestError.None)
-                            {
-                                return error;
-                            }
-
-                            error = await Verify(cancellationToken).ConfigureAwait(false);
-                            if (error != ClusterTestError.None)
-                            {
-                                return error;
-                            }
+                            await OpenConnections(cancellationToken).ConfigureAwait(false);
+                            await VerifyConnections(cancellationToken).ConfigureAwait(false);
                         }
                         finally
                         {
@@ -110,10 +51,14 @@ namespace FM.LiveSwitch.Hammer
             {
                 await UnregisterClients().ConfigureAwait(false);
             }
-            return error;
         }
 
-        private async Task<ClusterTestError> RegisterClients(CancellationToken cancellationToken)
+        #region Register and Unregister Clients
+
+        private Client _Client1;
+        private Client _Client2;
+
+        private async Task RegisterClients(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine("  Registering clients...");
 
@@ -129,19 +74,13 @@ namespace FM.LiveSwitch.Hammer
             ).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return ClusterTestError.Cancelled;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             // check faulted
             if (result.IsFaulted)
             {
-                Console.Error.WriteLine($"  Could not register clients: {result.Exception}");
-                return ClusterTestError.ClientRegisterFailed;
+                throw new ClientRegisterException("One or more clients could not be registered.", result.Exception);
             }
-
-            return ClusterTestError.None;
         }
 
         private Task UnregisterClients()
@@ -154,7 +93,16 @@ namespace FM.LiveSwitch.Hammer
             );
         }
 
-        private async Task<ClusterTestError> JoinChannel(CancellationToken cancellationToken)
+        #endregion
+
+        #region Join and Leave Channels
+
+        private string _ChannelId;
+
+        private Channel _Channel1;
+        private Channel _Channel2;
+
+        private async Task JoinChannel(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine("  Joining channel...");
 
@@ -170,22 +118,16 @@ namespace FM.LiveSwitch.Hammer
             ).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return ClusterTestError.Cancelled;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             // check faulted
             if (result.IsFaulted)
             {
-                Console.Error.WriteLine($"  Could not join channels: {result.Exception}");
-                return ClusterTestError.ChannelJoinFailed;
+                throw new ChannelJoinException("One or more channels could not be joined.", result.Exception);
             }
 
             _Channel1 = channelTasks.Result[0];
             _Channel2 = channelTasks.Result[1];
-
-            return ClusterTestError.None;
         }
 
         private Task LeaveChannel()
@@ -198,7 +140,25 @@ namespace FM.LiveSwitch.Hammer
             );
         }
 
-        private async Task<ClusterTestError> StartTracks(CancellationToken cancellationToken)
+        #endregion
+
+        #region Start and Stop Tracks
+
+        private TaskCompletionSource<bool> _AudioVerify1;
+        private TaskCompletionSource<bool> _AudioVerify2;
+        private TaskCompletionSource<bool> _VideoVerify1;
+        private TaskCompletionSource<bool> _VideoVerify2;
+
+        private AudioTrack _LocalAudioTrack1;
+        private AudioTrack _LocalAudioTrack2;
+        private VideoTrack _LocalVideoTrack1;
+        private VideoTrack _LocalVideoTrack2;
+        private AudioTrack _RemoteAudioTrack1;
+        private AudioTrack _RemoteAudioTrack2;
+        private VideoTrack _RemoteVideoTrack1;
+        private VideoTrack _RemoteVideoTrack2;
+
+        private async Task StartTracks(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine("  Starting tracks...");
 
@@ -227,19 +187,13 @@ namespace FM.LiveSwitch.Hammer
             ).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return ClusterTestError.Cancelled;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             // check faulted
             if (result.IsFaulted)
             {
-                Console.Error.WriteLine($"  Could not start tracks: {result.Exception}");
-                return ClusterTestError.TrackStartFailed;
+                throw new TrackStartException("One or more tracks could not be started.", result.Exception);
             }
-
-            return ClusterTestError.None;
         }
 
         private async Task StopTracks()
@@ -263,7 +217,23 @@ namespace FM.LiveSwitch.Hammer
             _RemoteVideoTrack2.Destroy();
         }
 
-        private async Task<ClusterTestError> OpenConnections(CancellationToken cancellationToken)
+        #endregion
+
+        #region Open and Close Connections
+
+        private int _AudioSendCount1;
+        private int _AudioSendCount2;
+        private int _AudioReceiveCount1;
+        private int _AudioReceiveCount2;
+        private int _VideoSendCount1;
+        private int _VideoSendCount2;
+        private int _VideoReceiveCount1;
+        private int _VideoReceiveCount2;
+
+        private McuConnection _Connection1;
+        private McuConnection _Connection2;
+
+        private async Task OpenConnections(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine("  Opening connections...");
 
@@ -293,19 +263,13 @@ namespace FM.LiveSwitch.Hammer
             ).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return ClusterTestError.Cancelled;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             // check faulted
             if (result.IsFaulted)
             {
-                Console.Error.WriteLine($"  Could not open connections: {result.Exception}");
-                return ClusterTestError.ConnectionOpenFailed;
+                throw new ConnectionOpenException("One or more connections could not be opened.", result.Exception);
             }
-
-            return ClusterTestError.None;
         }
 
         private Task CloseConnections()
@@ -318,7 +282,7 @@ namespace FM.LiveSwitch.Hammer
             );
         }
 
-        private async Task<ClusterTestError> Verify(CancellationToken cancellationToken)
+        private async Task VerifyConnections(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine("  Verifying media...");
 
@@ -333,37 +297,32 @@ namespace FM.LiveSwitch.Hammer
             ).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return ClusterTestError.Cancelled;
-            }
+            cancellationToken.ThrowIfCancellationRequested();
 
             if (!_AudioVerify1.Task.IsCompleted || _AudioVerify1.Task.IsFaulted)
             {
-                Console.Error.WriteLine($"  Audio 1 failed (sent: {_AudioSendCount1}, received: {_AudioReceiveCount1}).");
-                return ClusterTestError.AudioStream1Failed;
+                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #1 failed. Sent: {_AudioSendCount1} frames, but received {_AudioReceiveCount1} frames.");
             }
 
             if (!_AudioVerify2.Task.IsCompleted || _AudioVerify2.Task.IsFaulted)
             {
-                Console.Error.WriteLine($"  Audio 2 failed (sent: {_AudioSendCount2}, received: {_AudioReceiveCount2}).");
-                return ClusterTestError.AudioStream2Failed;
+                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #2 failed. Sent: {_AudioSendCount2} frames, but received {_AudioReceiveCount2} frames.");
             }
 
             if (!_VideoVerify1.Task.IsCompleted || _VideoVerify1.Task.IsFaulted)
             {
-                Console.Error.WriteLine($"  Video 1 failed (sent: {_VideoSendCount1}, received: {_VideoReceiveCount1}).");
-                return ClusterTestError.VideoStream1Failed;
+                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #1 failed. Sent: {_VideoSendCount1} frames, but received {_VideoReceiveCount1} frames.");
             }
 
             if (!_VideoVerify2.Task.IsCompleted || _VideoVerify2.Task.IsFaulted)
             {
-                Console.Error.WriteLine($"  Video 2 failed (sent: {_VideoSendCount2}, received: {_VideoReceiveCount2}).");
-                return ClusterTestError.VideoStream2Failed;
+                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #2 failed. Sent: {_VideoSendCount2} frames, but received {_VideoReceiveCount2} frames.");
             }
-
-            return ClusterTestError.None;
         }
+
+        #endregion
+
+        #region Create Tracks
 
         private AudioTrack CreateLocalAudioTrack()
         {
@@ -452,5 +411,7 @@ namespace FM.LiveSwitch.Hammer
             };
             return new VideoTrack(depacketizer).Next(decoder).Next(sink);
         }
+
+        #endregion
     }
 }

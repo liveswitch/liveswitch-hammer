@@ -13,30 +13,12 @@ namespace FM.LiveSwitch.Hammer
             Options = options;
         }
 
-        public async Task<ClusterTestError> Run(CancellationToken cancellationToken)
+        public async Task Run(CancellationToken cancellationToken)
         {
-            try
+            for (var i = 0; i < Options.IterationCount; i++)
             {
-                for (var i = 0; i < Options.IterationCount; i++)
-                {
-                    Console.Error.WriteLine($"Test #{i + 1}");
-
-                    var error = await new ClusterTestIteration(Options).Run(cancellationToken).ConfigureAwait(false);
-                    if (error != ClusterTestError.None)
-                    {
-                        if (error == ClusterTestError.Cancelled)
-                        {
-                            Console.Error.WriteLine("User cancelled.");
-                        }
-                        return error;
-                    }
-                }
-                return ClusterTestError.None;
-            }
-            catch (TaskCanceledException)
-            {
-                Console.Error.WriteLine("User cancelled.");
-                return ClusterTestError.Cancelled;
+                Console.Error.WriteLine($"Test #{i + 1}");
+                await new ClusterTestIteration(Options).Run(cancellationToken).ConfigureAwait(false);
             }
         }
     }

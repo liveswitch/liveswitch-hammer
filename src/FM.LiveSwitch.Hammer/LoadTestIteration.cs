@@ -1,5 +1,4 @@
-﻿using FM.LiveSwitch;
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -38,38 +37,18 @@ namespace FM.LiveSwitch.Hammer
         private ClientChannel[] _ClientChannels;
         private ClientChannelConnection[] _ClientChannelConnections;
 
-        public async Task<LoadTestError> Run(CancellationToken cancellationToken)
+        public async Task Run(CancellationToken cancellationToken)
         {
-            LoadTestError result;
             try
             {
-                result = await RegisterClients(cancellationToken).ConfigureAwait(false);
-                if (result != LoadTestError.None)
-                {
-                    return result;
-                }
-
+                await RegisterClients(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    result = await JoinChannels(cancellationToken).ConfigureAwait(false);
-                    if (result != LoadTestError.None)
-                    {
-                        return result;
-                    }
-
+                    await JoinChannels(cancellationToken).ConfigureAwait(false);
                     try
                     {
-                        result = await OpenConnections(cancellationToken).ConfigureAwait(false);
-                        if (result != LoadTestError.None)
-                        {
-                            return result;
-                        }
-
-                        result = await Pause(cancellationToken).ConfigureAwait(false);
-                        if (result != LoadTestError.None)
-                        {
-                            return result;
-                        }
+                        await OpenConnections(cancellationToken).ConfigureAwait(false);
+                        await Pause(cancellationToken).ConfigureAwait(false);
                     }
                     finally
                     {
@@ -85,10 +64,9 @@ namespace FM.LiveSwitch.Hammer
             {
                 await UnregisterClients().ConfigureAwait(false);
             }
-            return result;
         }
 
-        private async Task<LoadTestError> RegisterClients(CancellationToken cancellationToken)
+        private async Task RegisterClients(CancellationToken cancellationToken)
         {
             _Clients = Enumerable.Range(0, Options.ClientCount).Select(_ => new Client(Options.GatewayUrl, Options.ApplicationId)).ToArray();
 
@@ -109,19 +87,14 @@ namespace FM.LiveSwitch.Hammer
                 ).ConfigureAwait(false);
 
                 // check cancellation
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return LoadTestError.Cancelled;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // check faulted
                 if (result.IsFaulted)
                 {
-                    Console.Error.WriteLine($"  Could not register clients: {result.Exception}");
-                    return LoadTestError.ClientRegisterFailed;
+                    throw new ClientRegisterException("One or more clients could not be registered.", result.Exception);
                 }
             }
-            return LoadTestError.None;
         }
 
         private async Task UnregisterClients()
@@ -141,7 +114,7 @@ namespace FM.LiveSwitch.Hammer
             }
         }
 
-        private async Task<LoadTestError> JoinChannels(CancellationToken cancellationToken)
+        private async Task JoinChannels(CancellationToken cancellationToken)
         {
             var channelIds = Enumerable.Range(0, Options.ChannelCount).Select(_ => Utility.GenerateId()).ToArray();
 
@@ -179,19 +152,14 @@ namespace FM.LiveSwitch.Hammer
                 ).ConfigureAwait(false);
 
                 // check cancellation
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return LoadTestError.Cancelled;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // check faulted
                 if (result.IsFaulted)
                 {
-                    Console.Error.WriteLine($"  Could not join channels: {result.Exception}");
-                    return LoadTestError.ChannelJoinFailed;
+                    throw new ChannelJoinException("One or more channels could not be joined.", result.Exception);
                 }
             }
-            return LoadTestError.None;
         }
 
         private async Task LeaveChannels()
@@ -211,7 +179,7 @@ namespace FM.LiveSwitch.Hammer
             }
         }
 
-        private async Task<LoadTestError> OpenConnections(CancellationToken cancellationToken)
+        private async Task OpenConnections(CancellationToken cancellationToken)
         {
             _ClientChannelConnections = _ClientChannels.SelectMany(cc => Enumerable.Range(0, Options.ConnectionCount).Select(_ => new ClientChannelConnection
             {
@@ -259,19 +227,14 @@ namespace FM.LiveSwitch.Hammer
                 ).ConfigureAwait(false);
 
                 // check cancellation
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    return LoadTestError.Cancelled;
-                }
+                cancellationToken.ThrowIfCancellationRequested();
 
                 // check faulted
                 if (result.IsFaulted)
                 {
-                    Console.Error.WriteLine($"  Could not open connections: {result.Exception}");
-                    return LoadTestError.ConnectionOpenFailed;
+                    throw new ConnectionOpenException("One or more connections could not be opened.", result.Exception);
                 }
             }
-            return LoadTestError.None;
         }
 
         private async Task CloseConnections()
@@ -296,19 +259,14 @@ namespace FM.LiveSwitch.Hammer
             }
         }
 
-        private async Task<LoadTestError> Pause(CancellationToken cancellationToken)
+        private async Task Pause(CancellationToken cancellationToken)
         {
             Console.Error.WriteLine($" Pausing for {Options.PauseTimeout} seconds...");
 
             await Task.Delay(Options.PauseTimeout * 1000, cancellationToken).ConfigureAwait(false);
 
             // check cancellation
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return LoadTestError.Cancelled;
-            }
-
-            return LoadTestError.None;
+            cancellationToken.ThrowIfCancellationRequested();
         }
     }
 }
