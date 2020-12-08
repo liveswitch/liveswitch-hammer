@@ -305,22 +305,22 @@ namespace FM.LiveSwitch.Hammer
 
             if (!_SoundDetected1.Task.IsCompleted || _SoundDetected1.Task.IsFaulted)
             {
-                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #1 failed. Sent: {_AudioSendCount1} frames, but received {_AudioReceiveCount1} frames.");
+                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #1 failed. Sent {_AudioSendCount1} frames, but received {_AudioReceiveCount1} frames.");
             }
 
             if (!_SoundDetected2.Task.IsCompleted || _SoundDetected2.Task.IsFaulted)
             {
-                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #2 failed. Sent: {_AudioSendCount2} frames, but received {_AudioReceiveCount2} frames.");
+                throw new MediaStreamFailedException(StreamType.Audio, $"Audio stream #2 failed. Sent {_AudioSendCount2} frames, but received {_AudioReceiveCount2} frames.");
             }
 
             if (!_ImageDetected1.Task.IsCompleted || _ImageDetected1.Task.IsFaulted)
             {
-                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #1 failed. Sent: {_VideoSendCount1} frames, but received {_VideoReceiveCount1} frames.");
+                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #1 failed. Sent {_VideoSendCount1} frames, but received {_VideoReceiveCount1} frames.");
             }
 
             if (!_ImageDetected2.Task.IsCompleted || _ImageDetected2.Task.IsFaulted)
             {
-                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #2 failed. Sent: {_VideoSendCount2} frames, but received {_VideoReceiveCount2} frames.");
+                throw new MediaStreamFailedException(StreamType.Video, $"Video stream #2 failed. Sent {_VideoSendCount2} frames, but received {_VideoReceiveCount2} frames.");
             }
         }
 
