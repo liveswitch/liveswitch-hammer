@@ -58,7 +58,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task RegisterClients(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine("  Registering clients...");
+            Console.Error.WriteLine("Registering clients...");
 
             _Client1 = new Client(Options.GatewayUrl, Options.ApplicationId, null, null, null, null, Options.Region1)
             {
@@ -89,7 +89,7 @@ namespace FM.LiveSwitch.Hammer
 
         private Task UnregisterClients()
         {
-            Console.Error.WriteLine("  Unregistering clients...");
+            Console.Error.WriteLine("Unregistering clients...");
 
             return Task.WhenAll(
                 _Client1.Unregister().AsTask(TaskCreationOptions.RunContinuationsAsynchronously),
@@ -108,7 +108,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task JoinChannel(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine("  Joining channel...");
+            Console.Error.WriteLine("Joining channel...");
 
             _ChannelId = Utility.GenerateId();
 
@@ -136,7 +136,7 @@ namespace FM.LiveSwitch.Hammer
 
         private Task LeaveChannel()
         {
-            Console.Error.WriteLine("  Leaving channel...");
+            Console.Error.WriteLine("Leaving channel...");
 
             return Task.WhenAll(
                 _Client1.Leave(_ChannelId).AsTask(TaskCreationOptions.RunContinuationsAsynchronously),
@@ -164,7 +164,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task StartTracks(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine("  Starting tracks...");
+            Console.Error.WriteLine("Starting tracks...");
 
             _SoundDetected1 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _SoundDetected2 = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -202,7 +202,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task StopTracks()
         {
-            Console.Error.WriteLine("  Stopping tracks...");
+            Console.Error.WriteLine("Stopping tracks...");
 
             await Task.WhenAll(
                 _LocalAudioTrack1.Source.Stop().AsTask(TaskCreationOptions.RunContinuationsAsynchronously),
@@ -239,7 +239,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task OpenConnections(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine("  Opening connections...");
+            Console.Error.WriteLine("Opening connections...");
 
             var audioStream1 = new AudioStream(_LocalAudioTrack1, _RemoteAudioTrack1);
             var audioStream2 = new AudioStream(_LocalAudioTrack2, _RemoteAudioTrack2);
@@ -278,7 +278,7 @@ namespace FM.LiveSwitch.Hammer
 
         private Task CloseConnections()
         {
-            Console.Error.WriteLine("  Closing connections...");
+            Console.Error.WriteLine("Closing connections...");
 
             return Task.WhenAll(
                 _Connection1.Close().AsTask(TaskCreationOptions.RunContinuationsAsynchronously),
@@ -288,7 +288,7 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task VerifyConnections(CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine("  Verifying media...");
+            Console.Error.WriteLine("Verifying media...");
 
             await Task.WhenAny(
                 Task.Delay(Options.MediaTimeout * 1000, cancellationToken),

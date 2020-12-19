@@ -17,6 +17,7 @@ namespace FM.LiveSwitch.Hammer
         {
             for (var i = 0; i < Options.IterationCount; i++)
             {
+                Console.Error.WriteLine();
                 Console.Error.WriteLine($"Test #{i + 1}");
                 await new ClusterTestIteration(Options).Run(cancellationToken).ConfigureAwait(false);
             }
