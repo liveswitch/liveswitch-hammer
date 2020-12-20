@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Security.Cryptography.X509Certificates;
@@ -33,49 +34,52 @@ namespace FM.LiveSwitch.Hammer
         public async Task Run(CancellationToken cancellationToken)
         {
             // scan each Media Server
-            foreach (var mediaServer in await GetMediaServers().ConfigureAwait(false))
+            var mediaServers = await GetMediaServers().ConfigureAwait(false);
+            var mediaServerResults = new List<ScanTestMediaServerResult>();
+            for (var i = 0; i < mediaServers.Length; i++)
             {
-                await Scan(mediaServer, cancellationToken).ConfigureAwait(false);
+                var mediaServer = mediaServers[i];
+
+                Console.Error.WriteLine();
+                Console.Error.WriteLine($"Media Server {mediaServer.Id} ({i + 1}/{mediaServers.Length})");
+
+                mediaServerResults.Add(await Scan(mediaServer, cancellationToken).ConfigureAwait(false));
             }
 
-            // check for expiring certificates
-            CheckServerCertificates();
-        }
-
-        private void CheckServerCertificates()
-        {
-            var now = DateTime.UtcNow;
-            foreach (var (targetHost, remoteCertificate) in ServerCertificates)
+            // check if any Media Servers failed
+            var failedMediaServerResults = mediaServerResults.Where(x => x.State == ScanTestState.Fail);
+            if (failedMediaServerResults.Any())
             {
-                var remoteCertificateRemaining = remoteCertificate.NotAfter - now;
-                if (remoteCertificateRemaining < TimeSpan.FromDays(Options.MinCertDays))
-                {
-                    string expiresString;
-                    if (remoteCertificateRemaining.TotalDays > 1)
-                    {
-                        expiresString = $"in {(int)remoteCertificateRemaining.TotalDays} day(s)";
-                    }
-                    else if (remoteCertificateRemaining.TotalHours > 1)
-                    {
-                        expiresString = $"in {(int)remoteCertificateRemaining.TotalHours} hour(s)";
-                    }
-                    else if (remoteCertificateRemaining.TotalMinutes > 1)
-                    {
-                        expiresString = $"in {(int)remoteCertificateRemaining.TotalMinutes} minute(s)";
-                    }
-                    else
-                    {
-                        expiresString = "momentarily";
-                    }
-                    throw new CertificateExpiringException($"Certificate for target host '{targetHost}' expires {expiresString}.", remoteCertificate);
-                }
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Some Media Servers failed at least one scenario.");
             }
-        }
 
-        private async Task<bool> Scan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
-        {
+            // check if any Media Servers have expiring certificates
+            var expiringMediaServerResults = mediaServerResults.Where(x => x.IsCertificateExpiring(TimeSpan.FromDays(Options.MinCertDays)));
+            if (expiringMediaServerResults.Any())
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("Some Media Servers have expiring certificates.");
+            }
+
+            if (!failedMediaServerResults.Any() && !expiringMediaServerResults.Any())
+            {
+                Console.Error.WriteLine();
+                Console.Error.WriteLine("All Media Servers passed all scenarios.");
+            }
+
             Console.Error.WriteLine();
-            Console.Error.WriteLine($"Media Server {mediaServer.Id}");
+            Console.Error.WriteLine("Writing test results to standard output...");
+            Console.WriteLine(JsonConvert.SerializeObject(new
+            {
+                failed = failedMediaServerResults,
+                expiring = expiringMediaServerResults
+            }));
+        }
+
+        private async Task<ScanTestMediaServerResult> Scan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
+        {
+            Exception exception = null;
             for (var i = 0; i < Options.MaxAttempts; i++)
             {
                 // delay between attempts
@@ -85,56 +89,57 @@ namespace FM.LiveSwitch.Hammer
                 }
 
                 Console.Error.WriteLine();
-                Console.Error.WriteLine($"Test #{i + 1}");
+                Console.Error.WriteLine($"Test Attempt #{i + 1}");
 
                 // don't test inactive Media Servers
                 if (!mediaServer.Active)
                 {
                     Console.Error.WriteLine("Media Server is inactive. Skipping...");
-                    return false;
+                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is inactive.");
                 }
 
                 // don't test draining Media Servers
                 if (mediaServer.Draining)
                 {
                     Console.Error.WriteLine("Media Server is draining. Skipping...");
-                    return false;
+                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is draining.");
                 }
 
                 // don't test over-capacity Media Servers
                 if (mediaServer.OverCapacity)
                 {
                     Console.Error.WriteLine("Media Server is over-capacity. Skipping...");
-                    return false;
+                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is over-capacity.");
                 }
 
                 try
                 {
-                    // create iteration
-                    var iteration = new ScanTestIteration(Options);
-
-                    // run iteration
-                    await iteration.Run(mediaServer.Id, cancellationToken).ConfigureAwait(false);
+                    // test Media Server
+                    var test = new ScanTestMediaServer(Options);
+                    var result = await test.Run(mediaServer.Id, cancellationToken).ConfigureAwait(false);
 
                     // merge server certificates
-                    foreach (var (targetHost, remoteCertificate) in iteration.ServerCertificates)
+                    foreach (var (targetHost, remoteCertificate) in test.ServerCertificates)
                     {
                         ServerCertificates.TryAdd(targetHost, remoteCertificate);
                     }
-                    return true;
+                    return result;
                 }
-                catch (MediaServerMismatchException)
+                catch (Exception ex)
                 {
-                    // check if Media Server is still present
-                    mediaServer = await GetMediaServer(mediaServer.Id).ConfigureAwait(false);
-                    if (mediaServer == null)
+                    // don't test unregistered Media Servers
+                    if (ex is MediaServerMismatchException &&
+                        await GetMediaServer(mediaServer.Id).ConfigureAwait(false) == null)
                     {
-                        Console.Error.WriteLine("Media Server has unregistered.");
-                        return false;
+                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
                     }
+
+                    exception = ex;
                 }
             }
-            return false;
+
+            // retries exhausted
+            return ScanTestMediaServerResult.Fail(mediaServer.Id, exception);
         }
 
         private void InitializeHttpClient()

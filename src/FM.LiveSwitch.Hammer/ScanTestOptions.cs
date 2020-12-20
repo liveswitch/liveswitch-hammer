@@ -41,13 +41,13 @@ namespace FM.LiveSwitch.Hammer
         [Option("tag", Default = null, HelpText = "The client's tag.")]
         public string Tag { get; set; }
 
-        public bool ShouldTest(ScanTestMode mode)
+        public bool ShouldTest(ScanTestScenario scenario)
         {
-            if ((NoHost && mode == ScanTestMode.Host) ||
-                (NoStun && mode == ScanTestMode.Stun) ||
-                (NoTurnUdp && mode == ScanTestMode.TurnUdp) ||
-                (NoTurnTcp && mode == ScanTestMode.TurnTcp) ||
-                (NoTurns && mode == ScanTestMode.Turns))
+            if ((NoHost && scenario == ScanTestScenario.Host) ||
+                (NoStun && scenario == ScanTestScenario.Stun) ||
+                (NoTurnUdp && scenario == ScanTestScenario.TurnUdp) ||
+                (NoTurnTcp && scenario == ScanTestScenario.TurnTcp) ||
+                (NoTurns && scenario == ScanTestScenario.Turns))
             {
                 return false;
             }

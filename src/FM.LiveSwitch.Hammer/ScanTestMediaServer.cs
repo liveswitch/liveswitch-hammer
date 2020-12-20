@@ -1,74 +1,119 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Net.Security;
-using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ScanTestIteration
+    class ScanTestMediaServer
     {
         public ScanTestOptions Options { get; private set; }
 
         public ConcurrentDictionary<string, X509Certificate2> ServerCertificates { get; private set; }
 
-        public ScanTestIteration(ScanTestOptions options)
+        public ScanTestMediaServer(ScanTestOptions options)
         {
             Options = options;
             ServerCertificates = new ConcurrentDictionary<string, X509Certificate2>();
         }
 
-        public async Task Run(string mediaServerId, CancellationToken cancellationToken)
+        public async Task<ScanTestMediaServerResult> Run(string mediaServerId, CancellationToken cancellationToken)
         {
+            var result = ScanTestMediaServerResult.Pass(mediaServerId);
             try
             {
-                TcpSocket.ClientSslAuthenticate = CheckRemoteCertificate;
+                await RegisterClient(cancellationToken).ConfigureAwait(false);
                 try
                 {
-                    await RegisterClient(cancellationToken).ConfigureAwait(false);
-                    try
-                    {
-                        await JoinChannel(cancellationToken).ConfigureAwait(false);
+                    await JoinChannel(cancellationToken).ConfigureAwait(false);
 
-                        // test a variety of scenarios
-                        foreach (var mode in new[]
+                    // test a variety of scenarios
+                    foreach (var scenario in new[]
+                    {
+                        ScanTestScenario.Host,
+                        ScanTestScenario.Stun,
+                        ScanTestScenario.TurnUdp,
+                        ScanTestScenario.TurnTcp,
+                        ScanTestScenario.Turns
+                    })
+                    {
+                        if (Options.ShouldTest(scenario))
                         {
-                            ScanTestMode.Host,
-                            ScanTestMode.Stun,
-                            ScanTestMode.TurnUdp,
-                            ScanTestMode.TurnTcp,
-                            ScanTestMode.Turns
-                        })
-                        {
-                            if (Options.ShouldTest(mode))
+                            try
                             {
+                                TimeSpan? certificateValidFor = null;
+
+                                if (scenario.RequiresTls())
+                                {
+                                    // set certificate check
+                                    TcpSocket.ClientSslAuthenticate = (sslStream, targetHost, enabledSslProtocols) =>
+                                    {
+                                        sslStream.AuthenticateAsClient(targetHost, null, enabledSslProtocols, false);
+
+                                        if (sslStream.RemoteCertificate is X509Certificate2 remoteCertificate)
+                                        {
+                                            certificateValidFor = remoteCertificate.NotAfter - DateTime.UtcNow;
+
+                                            if (ServerCertificates.TryAdd(targetHost, remoteCertificate))
+                                            {
+                                                var daysRemaining = Math.Max(0, certificateValidFor.Value.TotalDays);
+
+                                                Console.Error.WriteLine(string.Join(Environment.NewLine, new[]
+                                                {
+                                                    $"TLS certificate subject: {remoteCertificate.Subject}",
+                                                    $"TLS certificate issuer: {remoteCertificate.Issuer}",
+                                                    $"TLS certificate issued: {remoteCertificate.NotBefore:yyyy-MM-ddTHH\\:mm\\:ss}",
+                                                    $"TLS certificate expiry: {remoteCertificate.NotAfter:yyyy-MM-ddTHH\\:mm\\:ss} ({(int)daysRemaining} day(s) remaining)",
+                                                    $"TLS certificate thumbprint: {remoteCertificate.Thumbprint}"
+                                                }));
+                                            }
+                                        }
+                                    };
+                                }
                                 try
                                 {
-                                    await OpenConnection(mediaServerId, mode, cancellationToken).ConfigureAwait(false);
+                                    await OpenConnection(mediaServerId, scenario, cancellationToken).ConfigureAwait(false);
+
+                                    // pass
+                                    result.SetScenarioResult(scenario, ScanTestScenarioResult.Pass(scenario, certificateValidFor));
+                                }
+                                catch (Exception ex)
+                                {
+                                    // fail
+                                    result.SetScenarioResult(scenario, ScanTestScenarioResult.Fail(scenario, ex));
                                 }
                                 finally
                                 {
                                     await CloseConnection().ConfigureAwait(false);
                                 }
                             }
+                            finally
+                            {
+                                if (scenario.RequiresTls())
+                                {
+                                    // unset certificate check (revert to default behaviour)
+                                    TcpSocket.ClientSslAuthenticate = null;
+                                }
+                            }
                         }
-                    }
-                    finally
-                    {
-                        await LeaveChannel().ConfigureAwait(false);
+                        else
+                        {
+                            // skip
+                            result.SetScenarioResult(scenario, ScanTestScenarioResult.Skip(scenario, "Disabled by options."));
+                        }
                     }
                 }
                 finally
                 {
-                    await UnregisterClient().ConfigureAwait(false);
+                    await LeaveChannel().ConfigureAwait(false);
                 }
             }
             finally
             {
-                TcpSocket.ClientSslAuthenticate = null;
+                await UnregisterClient().ConfigureAwait(false);
             }
+            return result;
         }
 
         #region Register and Unregister Clients
@@ -151,19 +196,19 @@ namespace FM.LiveSwitch.Hammer
 
         private McuConnection _Connection;
 
-        private async Task OpenConnection(string mediaServerId, ScanTestMode mode, CancellationToken cancellationToken)
+        private async Task OpenConnection(string mediaServerId, ScanTestScenario scenario, CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine($"Opening connection ({mode.ToDisplayString()})...");
+            Console.Error.WriteLine($"Opening connection ({scenario.ToDisplayString()})...");
 
             _Connection = _Channel.CreateMcuConnection(new AudioStream(new AudioTrack(new NullAudioSource(new Opus.Format { IsPacketized = true }))));
 
             _Connection.PreferredMediaServerId = mediaServerId;
 
-            if (mode == ScanTestMode.Host)
+            if (scenario == ScanTestScenario.Host)
             {
                 _Connection.IceGatherPolicy = IceGatherPolicy.All;
             }
-            else if (mode == ScanTestMode.Stun)
+            else if (scenario == ScanTestScenario.Stun)
             {
                 _Connection.IceGatherPolicy = IceGatherPolicy.NoHost;
             }
@@ -175,7 +220,7 @@ namespace FM.LiveSwitch.Hammer
 
             _Connection.OnAutomaticIceServers += (connection, automaticIceServers) =>
             {
-                FilterIceServers(automaticIceServers, mode);
+                FilterIceServers(automaticIceServers, scenario);
 
                 foreach (var automaticIceServer in automaticIceServers.Values)
                 {
@@ -210,35 +255,14 @@ namespace FM.LiveSwitch.Hammer
             return _Connection.Close().AsTask(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
-        private void FilterIceServers(IceServerCollection iceServers, ScanTestMode mode)
+        private void FilterIceServers(IceServerCollection iceServers, ScanTestScenario scenario)
         {
             foreach (var iceServer in iceServers.Values)
             {
-                if (!mode.IsCompatible(iceServer))
+                if (!scenario.IsCompatible(iceServer))
                 {
                     iceServers.Remove(iceServer);
                 }
-            }
-        }
-
-        #endregion
-
-        #region Check Remote Certificate
-
-        private void CheckRemoteCertificate(SslStream sslStream, string targetHost, SslProtocols enabledSslProtocols)
-        {
-            sslStream.AuthenticateAsClient(targetHost, null, enabledSslProtocols, false);
-
-            if (sslStream.RemoteCertificate is X509Certificate2 remoteCertificate && ServerCertificates.TryAdd(targetHost, remoteCertificate))
-            {
-                Console.Error.WriteLine(string.Join(Environment.NewLine, new[]
-                {
-                    $"TLS certificate subject: {remoteCertificate.Subject}",
-                    $"TLS certificate issuer: {remoteCertificate.Issuer}",
-                    $"TLS certificate issued: {remoteCertificate.NotBefore:yyyy-MM-ddTHH\\:mm\\:ss}",
-                    $"TLS certificate expiry: {remoteCertificate.NotAfter:yyyy-MM-ddTHH\\:mm\\:ss}",
-                    $"TLS certificate thumbprint: {remoteCertificate.Thumbprint}"
-                }));
             }
         }
 
