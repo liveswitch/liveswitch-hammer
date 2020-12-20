@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace FM.LiveSwitch.Hammer
 {
-    enum ScanTestMode
+    enum ScanTestScenario
     {
         [Display(Name = "Host")]
         Host,
@@ -18,32 +18,37 @@ namespace FM.LiveSwitch.Hammer
         Turns
     }
 
-    static class ScanTestModeExtensions
+    static class ScanTestScenarioExtensions
     {
-        public static string ToDisplayString(this ScanTestMode mode)
+        public static string ToDisplayString(this ScanTestScenario scenario)
         {
-            return typeof(ScanTestMode).GetMember(mode.ToString()).First().GetCustomAttribute<DisplayAttribute>().Name;
+            return typeof(ScanTestScenario).GetMember(scenario.ToString()).First().GetCustomAttribute<DisplayAttribute>().Name;
         }
 
-        public static bool IsCompatible(this ScanTestMode mode, IceServer iceServer)
+        public static bool IsCompatible(this ScanTestScenario scenario, IceServer iceServer)
         {
-            if (mode == ScanTestMode.Stun)
+            if (scenario == ScanTestScenario.Stun)
             {
                 return iceServer.IsStun;
             }
-            if (mode == ScanTestMode.TurnUdp)
+            if (scenario == ScanTestScenario.TurnUdp)
             {
                 return iceServer.IsTurn && iceServer.IsUdp;
             }
-            if (mode == ScanTestMode.TurnTcp)
+            if (scenario == ScanTestScenario.TurnTcp)
             {
                 return iceServer.IsTurn && iceServer.IsTcp && !iceServer.IsSecure;
             }
-            if (mode == ScanTestMode.Turns) 
+            if (scenario == ScanTestScenario.Turns) 
             {
                 return iceServer.IsTurn && iceServer.IsTcp && iceServer.IsSecure;
             }
             return false;
+        }
+
+        public static bool RequiresTls(this ScanTestScenario scenario)
+        {
+            return scenario == ScanTestScenario.Turns;
         }
     }
 }
