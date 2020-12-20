@@ -1,5 +1,8 @@
 ﻿using CommandLine;
 using CommandLine.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -10,6 +13,20 @@ namespace FM.LiveSwitch.Hammer
     {
         static void Main(string[] args)
         {
+            JsonConvert.DefaultSettings = () =>
+            {
+                var settings = new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore,
+                    ContractResolver = new DefaultContractResolver
+                    {
+                        NamingStrategy = new CamelCaseNamingStrategy()
+                    }
+                };
+                settings.Converters.Add(new StringEnumConverter());
+                return settings;
+            };
+
             using var parser = new Parser((settings) =>
             {
                 settings.CaseInsensitiveEnumValues = true;
@@ -65,8 +82,7 @@ namespace FM.LiveSwitch.Hammer
                 await func(cancellationTokenSource.Token).ConfigureAwait(false);
 
                 Console.Error.WriteLine();
-                Console.Error.WriteLine("Success!");
-
+                Console.Error.WriteLine("Exiting...");
                 return 0;
             }
             catch (TaskCanceledException ex)
@@ -98,11 +114,6 @@ namespace FM.LiveSwitch.Hammer
             {
                 LogException(ex);
                 return 6;
-            }
-            catch (CertificateExpiringException ex)
-            {
-                LogException(ex);
-                return 7;
             }
         }
 

@@ -6,21 +6,21 @@ using System.Threading.Tasks;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ScanTestIteration
+    class ScanTestMediaServer
     {
         public ScanTestOptions Options { get; private set; }
 
         public ConcurrentDictionary<string, X509Certificate2> ServerCertificates { get; private set; }
 
-        public ScanTestIteration(ScanTestOptions options)
+        public ScanTestMediaServer(ScanTestOptions options)
         {
             Options = options;
             ServerCertificates = new ConcurrentDictionary<string, X509Certificate2>();
         }
 
-        public async Task<ScanTestResult> Run(string mediaServerId, CancellationToken cancellationToken)
+        public async Task<ScanTestMediaServerResult> Run(string mediaServerId, CancellationToken cancellationToken)
         {
-            var result = new ScanTestResult(mediaServerId);
+            var result = ScanTestMediaServerResult.Pass(mediaServerId);
             try
             {
                 await RegisterClient(cancellationToken).ConfigureAwait(false);
@@ -42,7 +42,7 @@ namespace FM.LiveSwitch.Hammer
                         {
                             try
                             {
-                                TimeSpan? certificateExpiry = null;
+                                TimeSpan? certificateValidFor = null;
 
                                 if (scenario.RequiresTls())
                                 {
@@ -53,16 +53,18 @@ namespace FM.LiveSwitch.Hammer
 
                                         if (sslStream.RemoteCertificate is X509Certificate2 remoteCertificate)
                                         {
-                                            certificateExpiry = remoteCertificate.NotAfter - DateTime.UtcNow;
+                                            certificateValidFor = remoteCertificate.NotAfter - DateTime.UtcNow;
 
                                             if (ServerCertificates.TryAdd(targetHost, remoteCertificate))
                                             {
+                                                var daysRemaining = Math.Max(0, certificateValidFor.Value.TotalDays);
+
                                                 Console.Error.WriteLine(string.Join(Environment.NewLine, new[]
                                                 {
                                                     $"TLS certificate subject: {remoteCertificate.Subject}",
                                                     $"TLS certificate issuer: {remoteCertificate.Issuer}",
                                                     $"TLS certificate issued: {remoteCertificate.NotBefore:yyyy-MM-ddTHH\\:mm\\:ss}",
-                                                    $"TLS certificate expiry: {remoteCertificate.NotAfter:yyyy-MM-ddTHH\\:mm\\:ss}",
+                                                    $"TLS certificate expiry: {remoteCertificate.NotAfter:yyyy-MM-ddTHH\\:mm\\:ss} ({(int)daysRemaining} day(s) remaining)",
                                                     $"TLS certificate thumbprint: {remoteCertificate.Thumbprint}"
                                                 }));
                                             }
@@ -74,18 +76,12 @@ namespace FM.LiveSwitch.Hammer
                                     await OpenConnection(mediaServerId, scenario, cancellationToken).ConfigureAwait(false);
 
                                     // pass
-                                    result.SetScenarioResult(scenario, new ScanTestScenarioResult(ScanTestScenarioResultState.Pass)
-                                    {
-                                        CertificateExpiry = certificateExpiry
-                                    });
+                                    result.SetScenarioResult(scenario, ScanTestScenarioResult.Pass(scenario, certificateValidFor));
                                 }
                                 catch (Exception ex)
                                 {
                                     // fail
-                                    result.SetScenarioResult(scenario, new ScanTestScenarioResult(ScanTestScenarioResultState.Fail)
-                                    {
-                                        Exception = ex
-                                    });
+                                    result.SetScenarioResult(scenario, ScanTestScenarioResult.Fail(scenario, ex));
                                 }
                                 finally
                                 {
@@ -104,7 +100,7 @@ namespace FM.LiveSwitch.Hammer
                         else
                         {
                             // skip
-                            result.SetScenarioResult(scenario, new ScanTestScenarioResult(ScanTestScenarioResultState.Skip));
+                            result.SetScenarioResult(scenario, ScanTestScenarioResult.Skip(scenario, "Disabled by options."));
                         }
                     }
                 }

@@ -1,6 +1,6 @@
 ﻿namespace FM.LiveSwitch.Hammer
 {
-    enum ScanTestScenarioResultState
+    enum ScanTestState
     {
         Unknown,
         Skip,

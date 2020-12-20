@@ -1,22 +1,74 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 
 namespace FM.LiveSwitch.Hammer
 {
     class ScanTestScenarioResult
     {
-        public ScanTestScenarioResultState State { get; set; }
+        public ScanTestScenario Scenario { get; private set; }
 
-        public TimeSpan? CertificateExpiry { get; set; }
+        public ScanTestState State { get; private set; }
 
-        public Exception Exception { get; set; }
+        [JsonIgnore]
+        public TimeSpan? CertificateValidFor { get; private set; }
 
-        public ScanTestScenarioResult()
-            : this(ScanTestScenarioResultState.Unknown)
-        { }
-
-        public ScanTestScenarioResult(ScanTestScenarioResultState state)
+        public int? CertificateDays
         {
-            State = state;
+            get
+            {
+                var certificateValidFor = CertificateValidFor;
+                if (certificateValidFor == null)
+                {
+                    return null;
+                }
+                return (int)Math.Max(0, certificateValidFor.Value.TotalDays);
+            }
+        }
+
+        public Exception Exception { get; private set; }
+
+        public string Reason { get; private set; }
+
+        private ScanTestScenarioResult() { }
+
+        public static ScanTestScenarioResult Unknown(ScanTestScenario scenario)
+        {
+            return new ScanTestScenarioResult
+            {
+                Scenario = scenario,
+                State = ScanTestState.Unknown
+            };
+        }
+
+        public static ScanTestScenarioResult Pass(ScanTestScenario scenario, TimeSpan? certificateValidFor)
+        {
+            return new ScanTestScenarioResult
+            {
+                Scenario = scenario,
+                State = ScanTestState.Pass,
+                CertificateValidFor = certificateValidFor
+            };
+        }
+
+        public static ScanTestScenarioResult Fail(ScanTestScenario scenario, Exception exception)
+        {
+            return new ScanTestScenarioResult
+            {
+                Scenario = scenario,
+                State = ScanTestState.Fail,
+                Reason = exception.Message,
+                Exception = exception
+            };
+        }
+
+        public static ScanTestScenarioResult Skip(ScanTestScenario scenario, string reason)
+        {
+            return new ScanTestScenarioResult
+            {
+                Scenario = scenario,
+                State = ScanTestState.Skip,
+                Reason = reason
+            };
         }
     }
 }
