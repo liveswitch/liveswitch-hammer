@@ -33,8 +33,14 @@ namespace FM.LiveSwitch.Hammer
         public async Task Run(CancellationToken cancellationToken)
         {
             // scan each Media Server
-            foreach (var mediaServer in await GetMediaServers().ConfigureAwait(false))
+            var mediaServers = await GetMediaServers().ConfigureAwait(false);
+            for (var i = 0; i < mediaServers.Length; i++)
             {
+                var mediaServer = mediaServers[i];
+
+                Console.Error.WriteLine();
+                Console.Error.WriteLine($"Media Server {mediaServer.Id} ({i + 1}/{mediaServers.Length})");
+
                 await Scan(mediaServer, cancellationToken).ConfigureAwait(false);
             }
 
@@ -74,8 +80,6 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task<bool> Scan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
         {
-            Console.Error.WriteLine();
-            Console.Error.WriteLine($"Media Server {mediaServer.Id}");
             for (var i = 0; i < Options.MaxAttempts; i++)
             {
                 // delay between attempts
