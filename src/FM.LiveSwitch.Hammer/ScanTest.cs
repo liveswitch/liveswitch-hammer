@@ -1,10 +1,8 @@
 ﻿using Newtonsoft.Json;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -14,14 +12,11 @@ namespace FM.LiveSwitch.Hammer
     {
         public ScanTestOptions Options { get; private set; }
 
-        public ConcurrentDictionary<string, X509Certificate2> ServerCertificates { get; private set; }
-
         private HttpClient _HttpClient;
 
         public ScanTest(ScanTestOptions options)
         {
             Options = options;
-            ServerCertificates = new ConcurrentDictionary<string, X509Certificate2>();
 
             if (Options.MinCertDays < 0)
             {
@@ -118,23 +113,27 @@ namespace FM.LiveSwitch.Hammer
                     var test = new ScanTestMediaServer(Options);
                     var result = await test.Run(mediaServer.Id, cancellationToken).ConfigureAwait(false);
 
-                    // merge server certificates
-                    foreach (var (targetHost, remoteCertificate) in test.ServerCertificates)
+                    // return pass or skip
+                    if (result.State != ScanTestState.Fail)
                     {
-                        ServerCertificates.TryAdd(targetHost, remoteCertificate);
+                        return result;
                     }
-                    return result;
+
+                    // cache current exception
+                    exception = result.Exception;
                 }
                 catch (Exception ex)
                 {
-                    // don't test unregistered Media Servers
-                    if (ex is MediaServerMismatchException &&
-                        await GetMediaServer(mediaServer.Id).ConfigureAwait(false) == null)
-                    {
-                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
-                    }
-
+                    // cache current exception
                     exception = ex;
+                }
+
+                // don't test unregistered Media Servers
+                if (exception is MediaServerMismatchException &&
+                    await GetMediaServer(mediaServer.Id).ConfigureAwait(false) == null)
+                {
+                    Console.Error.WriteLine("Media Server has unregistered. Skipping...");
+                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
                 }
             }
 
