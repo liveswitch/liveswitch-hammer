@@ -87,7 +87,8 @@ namespace FM.LiveSwitch.Hammer
             if (scenarioResult.State == ScanTestState.Fail)
             {
                 State = ScanTestState.Fail;
-                Reason = "One or more scenarios failed.";
+                Exception = scenarioResult.Exception;
+                Reason = Exception.Message;
             }
 
             _ScenarioResults[scenario] = scenarioResult;
