@@ -159,7 +159,8 @@ namespace FM.LiveSwitch.Hammer
         private async Task<MediaServerInfo[]> GetMediaServers()
         {
             var responseJson = await _HttpClient.GetStringAsync("v1/mediaservers").ConfigureAwait(false);
-            return JsonConvert.DeserializeObject<MediaServerInfo[]>(responseJson);
+            var mediaServers = JsonConvert.DeserializeObject<MediaServerInfo[]>(responseJson);
+            return mediaServers.Where(mediaServer => Options.ShouldTest(mediaServer.Id)).ToArray();
         }
 
         private async Task<MediaServerInfo> GetMediaServer(string mediaServerId)
