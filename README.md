@@ -34,7 +34,7 @@ Using this approach will generate a library instead of an executable. Use `dotne
 ## Usage
 
 ```none
-lsconnect [verb] [options]
+lshammer [verb] [options]
 ```
 
 ### Verbs
