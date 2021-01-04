@@ -47,7 +47,7 @@ lsconnect [verb] [options]
   scan       Tests individual Media Servers for connectivity and media flow.
 ```
 
-## capture
+## cluster
 
 The `cluster` verb connects two clients in parallel to the same channel and then opens two MCU connections concurrently. The content of the media flow is monitored to ensure that the generated sounds and images are sent and received as expected.
 
