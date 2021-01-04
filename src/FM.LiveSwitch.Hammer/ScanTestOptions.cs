@@ -41,6 +41,18 @@ namespace FM.LiveSwitch.Hammer
         [Option("tag", Default = null, HelpText = "The client's tag.")]
         public string Tag { get; set; }
 
+        [Option("media-server-id", Default = null, HelpText = "The Media Server to test.")]
+        public string MediaServerId { get; set; }
+
+        public bool ShouldTest(string mediaServerId)
+        {
+            if (!string.IsNullOrEmpty(MediaServerId))
+            {
+                return MediaServerId == mediaServerId;
+            }
+            return true;
+        }
+
         public bool ShouldTest(ScanTestScenario scenario)
         {
             if ((NoHost && scenario == ScanTestScenario.Host) ||

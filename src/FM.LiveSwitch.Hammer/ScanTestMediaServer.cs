@@ -194,13 +194,13 @@ namespace FM.LiveSwitch.Hammer
 
         #region Open and Close Connections
 
-        private McuConnection _Connection;
+        private SfuConnection _Connection;
 
         private async Task OpenConnection(string mediaServerId, ScanTestScenario scenario, CancellationToken cancellationToken)
         {
             Console.Error.WriteLine($"Opening connection ({scenario.ToDisplayString()})...");
 
-            _Connection = _Channel.CreateMcuConnection(new AudioStream(new AudioTrack(new NullAudioSource(new Opus.Format { IsPacketized = true }))));
+            _Connection = _Channel.CreateSfuUpstreamConnection(new AudioStream(new AudioTrack(new NullAudioSource(new Opus.Format { IsPacketized = true }))));
 
             _Connection.PreferredMediaServerId = mediaServerId;
 

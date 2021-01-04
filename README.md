@@ -152,6 +152,8 @@ For TURNS, certificate expiry can also be tested. If a certificate is expiring w
 
   --tag                   The client's tag.
 
+  --media-server-id       The Media Server to test.
+
   -g, --gateway-url       (Default: http://localhost:8080/sync) The Gateway URL.
 
   -a, --application-id    (Default: my-app-id) The application identifier.
