@@ -4,6 +4,8 @@
 
 The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSwitch deployment.
 
+Requires .NET Core 3.1 or newer. Requires LiveSwitch Server 1.11.1 or newer.
+
 ## Building
 
 Use `dotnet publish` to create a single, self-contained file for a specific platform/architecture:
