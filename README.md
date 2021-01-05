@@ -33,6 +33,14 @@ dotnet build
 
 Using this approach will generate a library instead of an executable. Use `dotnet lshammer.dll` instead of `lshammer` to run it.
 
+## Docker
+
+Images are also hosted on [DockerHub](https://hub.docker.com/r/frozenmountain/liveswitch-hammer).
+
+```shell
+docker run --rm frozenmountain/liveswitch-hammer [verb] [options]
+```
+
 ## Usage
 
 ```none
