@@ -41,6 +41,16 @@ Images are also hosted on [DockerHub](https://hub.docker.com/r/frozenmountain/li
 docker run --rm frozenmountain/liveswitch-hammer [verb] [options]
 ```
 
+## Environment Variables
+
+Environment variables can be used in place of command-line arguments.
+
+Environment variable names are `lshammer_{verb}_{option}`, e.g. `lshammer_scan_gateway-url`.
+
+Environment variable names are case-insensitive, so `lshammer_scan_application-id` is equivalent to `LSHAMMER_SCAN_APPLICATION-ID`.
+
+Note that command-line arguments always take precedence over environment variables.
+
 ## Usage
 
 ```none
@@ -72,9 +82,9 @@ This test is intended to be used with multiple Media Servers that cluster togeth
   --media-timeout         (Default: 5) The number of seconds to wait for media
                           to flow.
 
-  --tag-1                 The first client's tag.
+  --tag1                 The first client's tag.
 
-  --tag-2                 The second client's tag.
+  --tag2                 The second client's tag.
 
   --region1               The first client's region.
 

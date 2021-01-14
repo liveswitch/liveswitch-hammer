@@ -11,10 +11,10 @@ namespace FM.LiveSwitch.Hammer
         [Option("media-timeout", Default = 5, HelpText = "The number of seconds to wait for media to flow.")]
         public int MediaTimeout { get; set; }
 
-        [Option("tag-1", Default = null, HelpText = "The first client's tag.")]
+        [Option("tag1", Default = null, HelpText = "The first client's tag.")]
         public string Tag1 { get; set; }
 
-        [Option("tag-2", Default = null, HelpText = "The second client's tag.")]
+        [Option("tag2", Default = null, HelpText = "The second client's tag.")]
         public string Tag2 { get; set; }
 
         [Option("region1", Default = null, HelpText = "The first client's region.")]
