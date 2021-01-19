@@ -26,19 +26,20 @@ namespace FM.LiveSwitch.Hammer
             public Client Client { get; set; }
             public string ChannelId { get; set; }
             public Channel Channel { get; set; }
-            public AudioTrack LocalAudioTrack { get; set; }
-            public VideoTrack LocalVideoTrack { get; set; }
             public AudioTrack RemoteAudioTrack { get; set; }
             public VideoTrack RemoteVideoTrack { get; set; }
-            public McuConnection Connection { get; set; }
+            public SfuConnection Connection { get; set; }
         }
 
+        private string[] _PrivateIPAddresses;
         private Client[] _Clients;
         private ClientChannel[] _ClientChannels;
         private ClientChannelConnection[] _ClientChannelConnections;
 
         public async Task Run(CancellationToken cancellationToken)
         {
+            _PrivateIPAddresses = LocalNetwork.GetIPAddresses(new[] { AddressType.IPv4 }, true);
+
             try
             {
                 await RegisterClients(cancellationToken).ConfigureAwait(false);
@@ -240,14 +241,6 @@ namespace FM.LiveSwitch.Hammer
                     Task.WhenAll(
                         clientChannelConnections.Select(ccc =>
                         {
-                            ccc.LocalAudioTrack = new AudioTrack(new NullAudioSource(new Opus.Format
-                            {
-                                IsPacketized = true
-                            }));
-                            ccc.LocalVideoTrack = new VideoTrack(new NullVideoSource(new Vp8.Format
-                            {
-                                IsPacketized = true
-                            }));
                             ccc.RemoteAudioTrack = new AudioTrack(new NullAudioSink(new Opus.Format
                             {
                                 IsPacketized = true
@@ -257,10 +250,13 @@ namespace FM.LiveSwitch.Hammer
                                 IsPacketized = true
                             }));
 
-                            ccc.Connection = ccc.Channel.CreateMcuConnection(
-                                new AudioStream(ccc.LocalAudioTrack, ccc.RemoteAudioTrack),
-                                new VideoStream(ccc.LocalVideoTrack, ccc.RemoteVideoTrack)
+                            ccc.Connection = ccc.Channel.CreateSfuDownstreamConnection(
+                                Utility.GenerateId(),
+                                new AudioStream(null, ccc.RemoteAudioTrack),
+                                new VideoStream(null, ccc.RemoteVideoTrack)
                             );
+
+                            ccc.Connection.PrivateIPAddresses = _PrivateIPAddresses;
 
                             return ccc.Connection.Open().AsTaskAsync();
                         })
@@ -298,8 +294,6 @@ namespace FM.LiveSwitch.Hammer
                     {
                         await ccc.Connection?.Close();
 
-                        ccc.LocalAudioTrack?.Destroy();
-                        ccc.LocalVideoTrack?.Destroy();
                         ccc.RemoteAudioTrack?.Destroy();
                         ccc.RemoteVideoTrack?.Destroy();
                     })
