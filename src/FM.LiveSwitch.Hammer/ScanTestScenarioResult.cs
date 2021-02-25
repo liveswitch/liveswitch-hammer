@@ -3,11 +3,9 @@ using System;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ScanTestScenarioResult
+    class ScanTestScenarioResult : ScanTestResult
     {
         public ScanTestScenario Scenario { get; private set; }
-
-        public ScanTestState State { get; private set; }
 
         [JsonIgnore]
         public TimeSpan? CertificateValidFor { get; private set; }
@@ -24,10 +22,6 @@ namespace FM.LiveSwitch.Hammer
                 return (int)Math.Max(0, certificateValidFor.Value.TotalDays);
             }
         }
-
-        public Exception Exception { get; private set; }
-
-        public string Reason { get; private set; }
 
         private ScanTestScenarioResult() { }
 
@@ -56,7 +50,6 @@ namespace FM.LiveSwitch.Hammer
             {
                 Scenario = scenario,
                 State = ScanTestState.Fail,
-                Reason = exception.Message,
                 Exception = exception
             };
         }

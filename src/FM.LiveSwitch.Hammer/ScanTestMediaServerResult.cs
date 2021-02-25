@@ -5,29 +5,23 @@ using System.Linq;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ScanTestMediaServerResult
+    class ScanTestMediaServerResult : ScanTestResult
     {
         public string MediaServerId { get; private set; }
 
-        public ScanTestState State { get; private set; }
-
-        public Exception Exception { get; private set; }
-
-        public string Reason { get; private set; }
-
-        public ScanTestScenarioResult[] ScenarioResults { get { return _ScenarioResults.Select(x => x.Value).ToArray();  } }
+        public ScanTestScenarioResult[] Results { get { return _ScenarioResults.Select(x => x.Value).ToArray();  } }
 
         [JsonIgnore]
-        public ScanTestScenarioResult[] PassedScenarioResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Pass).Select(x => x.Value).ToArray(); } }
+        public ScanTestScenarioResult[] PassedResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Pass).Select(x => x.Value).ToArray(); } }
 
         [JsonIgnore]
-        public ScanTestScenarioResult[] FailedScenarioResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Fail).Select(x => x.Value).ToArray(); } }
+        public ScanTestScenarioResult[] FailedResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Fail).Select(x => x.Value).ToArray(); } }
 
         [JsonIgnore]
-        public ScanTestScenarioResult[] SkippedScenarioResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Skip).Select(x => x.Value).ToArray(); } }
+        public ScanTestScenarioResult[] SkippedResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Skip).Select(x => x.Value).ToArray(); } }
 
         [JsonIgnore]
-        public ScanTestScenarioResult[] UnknownScenarioResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Unknown).Select(x => x.Value).ToArray(); } }
+        public ScanTestScenarioResult[] UnknownResults { get { return _ScenarioResults.Where(x => x.Value.State == ScanTestState.Unknown).Select(x => x.Value).ToArray(); } }
 
         private readonly Dictionary<ScanTestScenario, ScanTestScenarioResult> _ScenarioResults;
 
@@ -59,7 +53,6 @@ namespace FM.LiveSwitch.Hammer
             return new ScanTestMediaServerResult(mediaServerId)
             {
                 State = ScanTestState.Fail,
-                Reason = exception.Message,
                 Exception = exception
             };
         }
@@ -84,14 +77,13 @@ namespace FM.LiveSwitch.Hammer
 
         public void SetScenarioResult(ScanTestScenario scenario, ScanTestScenarioResult scenarioResult)
         {
+            _ScenarioResults[scenario] = scenarioResult;
+
             if (scenarioResult.State == ScanTestState.Fail)
             {
                 State = ScanTestState.Fail;
-                Exception = scenarioResult.Exception;
-                Reason = Exception.Message;
+                Reason = $"{FailedResults.Length} scenario(s) failed.";
             }
-
-            _ScenarioResults[scenario] = scenarioResult;
         }
 
         public bool IsCertificateExpiring(TimeSpan maxCertificateValidFor)

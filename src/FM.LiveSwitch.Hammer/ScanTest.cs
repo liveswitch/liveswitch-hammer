@@ -74,17 +74,11 @@ namespace FM.LiveSwitch.Hammer
 
         private async Task<ScanTestMediaServerResult> Scan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
         {
-            Exception exception = null;
-            for (var i = 0; i < Options.MaxAttempts; i++)
+            var attempt = 1;
+            while (true)
             {
-                // delay between attempts
-                if (i > 0)
-                {
-                    await Task.Delay(Options.AttemptInterval * Constants.MillisecondsPerSecond).ConfigureAwait(false);
-                }
-
                 Console.Error.WriteLine();
-                Console.Error.WriteLine($"Test Attempt #{i + 1}");
+                Console.Error.WriteLine($"Test Attempt #{attempt}");
 
                 // don't test inactive Media Servers
                 if (!mediaServer.Active)
@@ -107,29 +101,17 @@ namespace FM.LiveSwitch.Hammer
                     return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is over-capacity.");
                 }
 
-                try
-                {
-                    // test Media Server
-                    var test = new ScanTestMediaServer(Options);
-                    var result = await test.Run(mediaServer.Id, cancellationToken).ConfigureAwait(false);
+                // scan Media Server
+                var result = await DoScan(mediaServer, cancellationToken).ConfigureAwait(false);
 
-                    // return pass or skip
-                    if (result.State != ScanTestState.Fail)
-                    {
-                        return result;
-                    }
-
-                    // cache current exception
-                    exception = result.Exception;
-                }
-                catch (Exception ex)
+                // check for success
+                if (result.State != ScanTestState.Fail)
                 {
-                    // cache current exception
-                    exception = ex;
+                    return result;
                 }
 
-                // don't test unregistered Media Servers
-                if (exception is MediaServerMismatchException)
+                // check for acceptable failures
+                if (result.Exception is MediaServerMismatchException)
                 {
                     if (await MediaServerIsGone(mediaServer.Id).ConfigureAwait(false))
                     {
@@ -142,10 +124,28 @@ namespace FM.LiveSwitch.Hammer
                         return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server would be over-capacity.");
                     }
                 }
-            }
 
-            // retries exhausted
-            return ScanTestMediaServerResult.Fail(mediaServer.Id, exception);
+                // check for max attempts
+                if (attempt == Options.MaxAttempts)
+                {
+                    return result;
+                }
+
+                // time to try again
+                await Task.Delay(Options.AttemptInterval * Constants.MillisecondsPerSecond).ConfigureAwait(false);
+            }
+        }
+
+        private Task<ScanTestMediaServerResult> DoScan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
+        {
+            try
+            {
+                return new ScanTestMediaServer(Options).Run(mediaServer.Id, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                return Task.FromResult(ScanTestMediaServerResult.Fail(mediaServer.Id, ex));
+            }
         }
 
         private void InitializeHttpClient()
