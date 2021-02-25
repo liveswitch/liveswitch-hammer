@@ -170,7 +170,11 @@ namespace FM.LiveSwitch.Hammer
                     Task.WhenAll(
                         clientChannels.Select(async cc =>
                         {
-                            cc.Channel = await cc.Client.Join(Token.GenerateClientJoinToken(cc.Client, new ChannelClaim(cc.ChannelId), Options.SharedSecret)).AsTask(TaskCreationOptions.RunContinuationsAsynchronously);
+                            cc.Channel = await cc.Client.Join(Token.GenerateClientJoinToken(cc.Client, new ChannelClaim(cc.ChannelId)
+                            {
+                                DisableRemoteClientEvents = true,
+                                DisableRemoteUpstreamConnectionEvents = true
+                            }, Options.SharedSecret)).AsTask(TaskCreationOptions.RunContinuationsAsynchronously);
                         })
                     )
                 ).ConfigureAwait(false);
