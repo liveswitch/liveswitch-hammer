@@ -18,9 +18,9 @@ namespace FM.LiveSwitch.Hammer
             ServerCertificates = new ConcurrentDictionary<string, X509Certificate2>();
         }
 
-        public async Task<ScanTestMediaServerResult> Run(string mediaServerId, CancellationToken cancellationToken)
+        public async Task<ScanTestMediaServerResult> Run(MediaServerInfo mediaServer, CancellationToken cancellationToken)
         {
-            var result = ScanTestMediaServerResult.Pass(mediaServerId);
+            var result = ScanTestMediaServerResult.Pass(mediaServer);
             try
             {
                 await RegisterClient(cancellationToken).ConfigureAwait(false);
@@ -73,7 +73,7 @@ namespace FM.LiveSwitch.Hammer
                                 }
                                 try
                                 {
-                                    await OpenConnection(mediaServerId, scenario, cancellationToken).ConfigureAwait(false);
+                                    await OpenConnection(mediaServer.Id, scenario, cancellationToken).ConfigureAwait(false);
 
                                     // pass
                                     result.SetScenarioResult(scenario, ScanTestScenarioResult.Pass(scenario, certificateValidFor));
