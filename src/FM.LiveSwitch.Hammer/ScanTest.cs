@@ -84,21 +84,21 @@ namespace FM.LiveSwitch.Hammer
                 if (!mediaServer.Active)
                 {
                     Console.Error.WriteLine("Media Server is inactive. Skipping...");
-                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is inactive.");
+                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server is inactive.");
                 }
 
                 // don't test draining Media Servers
                 if (mediaServer.Draining)
                 {
                     Console.Error.WriteLine("Media Server is draining. Skipping...");
-                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is draining.");
+                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server is draining.");
                 }
 
                 // don't test over-capacity Media Servers
                 if (mediaServer.OverCapacity)
                 {
                     Console.Error.WriteLine("Media Server is over-capacity. Skipping...");
-                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server is over-capacity.");
+                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server is over-capacity.");
                 }
 
                 // scan Media Server
@@ -116,12 +116,12 @@ namespace FM.LiveSwitch.Hammer
                     if (await MediaServerIsGone(mediaServer.Id).ConfigureAwait(false))
                     {
                         Console.Error.WriteLine("Media Server has unregistered. Skipping...");
-                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
+                        return ScanTestMediaServerResult.Skip(mediaServer, "Media Server has unregistered.");
                     }
                     else if (await MediaServerWouldBeOverCapacity(mediaServer.Id).ConfigureAwait(false))
                     {
                         Console.Error.WriteLine("Media Server would be over-capacity. Skipping...");
-                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server would be over-capacity.");
+                        return ScanTestMediaServerResult.Skip(mediaServer, "Media Server would be over-capacity.");
                     }
                 }
 
@@ -140,11 +140,11 @@ namespace FM.LiveSwitch.Hammer
         {
             try
             {
-                return new ScanTestMediaServer(Options).Run(mediaServer.Id, cancellationToken);
+                return new ScanTestMediaServer(Options).Run(mediaServer, cancellationToken);
             }
             catch (Exception ex)
             {
-                return Task.FromResult(ScanTestMediaServerResult.Fail(mediaServer.Id, ex));
+                return Task.FromResult(ScanTestMediaServerResult.Fail(mediaServer, ex));
             }
         }
 
