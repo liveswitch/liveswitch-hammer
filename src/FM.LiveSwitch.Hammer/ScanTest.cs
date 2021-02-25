@@ -129,11 +129,18 @@ namespace FM.LiveSwitch.Hammer
                 }
 
                 // don't test unregistered Media Servers
-                if (exception is MediaServerMismatchException &&
-                    await GetMediaServer(mediaServer.Id).ConfigureAwait(false) == null)
+                if (exception is MediaServerMismatchException)
                 {
-                    Console.Error.WriteLine("Media Server has unregistered. Skipping...");
-                    return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
+                    if (await MediaServerIsGone(mediaServer.Id).ConfigureAwait(false))
+                    {
+                        Console.Error.WriteLine("Media Server has unregistered. Skipping...");
+                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server has unregistered.");
+                    }
+                    else if (await MediaServerWouldBeOverCapacity(mediaServer.Id).ConfigureAwait(false))
+                    {
+                        Console.Error.WriteLine("Media Server would be over-capacity. Skipping...");
+                        return ScanTestMediaServerResult.Skip(mediaServer.Id, "Media Server would be over-capacity.");
+                    }
                 }
             }
 
@@ -156,6 +163,49 @@ namespace FM.LiveSwitch.Hammer
             _HttpClient.DefaultRequestHeaders.Add("X-API-Key", Options.ApiKey);
         }
 
+        private async Task<bool> MediaServerIsGone(string mediaServerId)
+        {
+            return await GetMediaServer(mediaServerId).ConfigureAwait(false) == null;
+        }
+
+        private async Task<bool> MediaServerWouldBeOverCapacity(string mediaServerId)
+        {
+            var mediaServer = await GetMediaServer(mediaServerId).ConfigureAwait(false);
+            if (mediaServer == null)
+            {
+                return false;
+            }
+
+            var deploymentConfig = await GetDeploymentConfig(mediaServer.DeploymentId).ConfigureAwait(false);
+            if (deploymentConfig == null)
+            {
+                return false;
+            }
+
+            var capacityThresholds = deploymentConfig.CapacityThresholds;
+            if (capacityThresholds == null)
+            {
+                return false;
+            }
+
+            var sfuConnectionsPerCpuThreshold =
+                capacityThresholds.SfuConnectionsPerCpuThreshold ?? 
+                capacityThresholds.SafeSfuConnectionsPerCpuThreshold ?? 
+                capacityThresholds.UnsafeSfuConnectionsPerCpuThreshold;
+            if (sfuConnectionsPerCpuThreshold == null || sfuConnectionsPerCpuThreshold <= 0)
+            {
+                return false;
+            }
+
+            var sfuUsedCapacityIncrement = 1.0 / sfuConnectionsPerCpuThreshold * mediaServer.CoreCount;
+            if (sfuUsedCapacityIncrement + mediaServer.UsedCapacity > 1.0)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
         private async Task<MediaServerInfo[]> GetMediaServers()
         {
             var responseJson = await _HttpClient.GetStringAsync("v1/mediaservers").ConfigureAwait(false);
@@ -166,6 +216,12 @@ namespace FM.LiveSwitch.Hammer
         private async Task<MediaServerInfo> GetMediaServer(string mediaServerId)
         {
             return (await GetMediaServers().ConfigureAwait(false)).FirstOrDefault(mediaServer => mediaServer.Id == mediaServerId);
+        }
+
+        private async Task<DeploymentConfig> GetDeploymentConfig(string deploymentId)
+        {
+            var responseJson = await _HttpClient.GetStringAsync($"v2/DeploymentConfig({deploymentId})").ConfigureAwait(false);
+            return JsonConvert.DeserializeObject<DeploymentConfig>(responseJson);
         }
     }
 }

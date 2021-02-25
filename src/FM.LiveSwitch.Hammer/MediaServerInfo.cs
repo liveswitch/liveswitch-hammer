@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace FM.LiveSwitch.Hammer
+﻿namespace FM.LiveSwitch.Hammer
 {
     class MediaServerInfo
     {
@@ -17,5 +13,9 @@ namespace FM.LiveSwitch.Hammer
         public double UsedCapacity { get; set; }
 
         public bool Draining { get; set; }
+
+        public int CoreCount { get; set; }
+
+        public string DeploymentId { get; set; }
     }
 }
