@@ -126,10 +126,12 @@ namespace FM.LiveSwitch.Hammer
                 }
 
                 // check for max attempts
-                if (attempt == Options.MaxAttempts)
+                if (attempt >= Options.MaxAttempts)
                 {
                     return result;
                 }
+
+                attempt++;
 
                 // time to try again
                 await Task.Delay(Options.AttemptInterval * Constants.MillisecondsPerSecond).ConfigureAwait(false);
