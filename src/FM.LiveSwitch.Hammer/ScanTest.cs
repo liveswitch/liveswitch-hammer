@@ -38,7 +38,7 @@ namespace FM.LiveSwitch.Hammer
                 Console.Error.WriteLine();
                 Console.Error.WriteLine($"Media Server {mediaServer.Id} ({i + 1}/{mediaServers.Length})");
 
-                mediaServerResults.Add(await Scan(mediaServer, cancellationToken).ConfigureAwait(false));
+                mediaServerResults.Add(await Scan(mediaServer.Id, cancellationToken).ConfigureAwait(false));
             }
 
             // check if any Media Servers failed
@@ -72,13 +72,16 @@ namespace FM.LiveSwitch.Hammer
             }));
         }
 
-        private async Task<ScanTestMediaServerResult> Scan(MediaServerInfo mediaServer, CancellationToken cancellationToken)
+        private async Task<ScanTestMediaServerResult> Scan(string mediaServerId, CancellationToken cancellationToken)
         {
             var attempt = 1;
             while (true)
             {
                 Console.Error.WriteLine();
                 Console.Error.WriteLine($"Test Attempt #{attempt}");
+
+                // get current info
+                var mediaServer = await GetMediaServer(mediaServerId).ConfigureAwait(false);
 
                 // don't test inactive Media Servers
                 if (!mediaServer.Active)
