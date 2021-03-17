@@ -100,7 +100,7 @@ This test is intended to be used with multiple Media Servers that cluster togeth
 
 ## load
 
-The `load` verb connects a configurable number of clients to a configurable number of channels, and then opens a configurable number of MCU connections. The degree of parallelism in each of these three stages (client register, channel join, connection open) is configurable.
+The `load` verb connects a configurable number of clients to a configurable number of channels, and then opens a configurable number of SFU connections. The degree of parallelism in each of these three stages (client register, channel join, connection open) is configurable.
 
 There are two ways to parallelize the channel join and connection open tasks:
 
