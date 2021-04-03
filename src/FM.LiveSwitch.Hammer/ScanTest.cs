@@ -82,6 +82,11 @@ namespace FM.LiveSwitch.Hammer
 
                 // get current info
                 var mediaServer = await GetMediaServer(mediaServerId).ConfigureAwait(false);
+                if (mediaServer == null)
+                {
+                    Console.Error.WriteLine("Media Server is gone. Skipping...");
+                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server has unregistered.");
+                }
 
                 // don't test inactive Media Servers
                 if (!mediaServer.Active)
