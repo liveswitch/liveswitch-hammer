@@ -85,7 +85,7 @@ namespace FM.LiveSwitch.Hammer
                 if (mediaServer == null)
                 {
                     Console.Error.WriteLine("Media Server is gone. Skipping...");
-                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server has unregistered.");
+                    return ScanTestMediaServerResult.Skip(mediaServer, "Media Server is gone.");
                 }
 
                 // don't test inactive Media Servers
