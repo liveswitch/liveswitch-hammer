@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class LoadTest
+    class LoadTest : Test
     {
         public LoadTestOptions Options { get; private set; }
 
         public LoadTest(LoadTestOptions options)
+            : base(options)
         {
             Options = options;
         }

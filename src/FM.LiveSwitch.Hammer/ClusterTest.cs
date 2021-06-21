@@ -4,11 +4,12 @@ using System.Threading.Tasks;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ClusterTest
+    class ClusterTest : Test
     {
         public ClusterTestOptions Options { get; private set; }
 
         public ClusterTest(ClusterTestOptions options)
+            : base(options)
         {
             Options = options;
         }

@@ -12,5 +12,8 @@ namespace FM.LiveSwitch.Hammer
 
         [Option('s', "shared-secret", Default = "--replaceThisWithYourOwnSharedSecret--", HelpText = "The shared secret.")]
         public string SharedSecret { get; set; }
+
+        [Option("sdk-log-level", Default = LogLevel.None, HelpText = "The LiveSwitch SDK log level.")]
+        public LogLevel SdkLogLevel { get; set; }
     }
 }

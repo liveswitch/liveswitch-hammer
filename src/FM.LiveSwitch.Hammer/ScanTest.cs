@@ -8,13 +8,14 @@ using System.Threading.Tasks;
 
 namespace FM.LiveSwitch.Hammer
 {
-    class ScanTest
+    class ScanTest : Test
     {
         public ScanTestOptions Options { get; private set; }
 
         private HttpClient _HttpClient;
 
         public ScanTest(ScanTestOptions options)
+            : base(options)
         {
             Options = options;
 
