@@ -135,7 +135,7 @@ namespace FM.LiveSwitch.Hammer
             var newArgs = new List<string>(args);
             foreach (var unusedOption in FilterOptions(args, options))
             {
-                var value = Environment.GetEnvironmentVariable($"{environmentVariablePrefix}_{unusedOption.LongName.ToUpperInvariant()}");
+                var value = Environment.GetEnvironmentVariable($"{environmentVariablePrefix}_{unusedOption.LongName.ToUpperInvariant().Replace("-", "_")}");
                 if (value != null)
                 {
                     Console.Error.WriteLine($"Environment variable discovered matching --{unusedOption.LongName} option.");

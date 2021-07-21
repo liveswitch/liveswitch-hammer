@@ -45,9 +45,9 @@ docker run --rm frozenmountain/liveswitch-hammer [verb] [options]
 
 Environment variables can be used in place of command-line arguments.
 
-Environment variable names are `lshammer_{verb}_{option}`, e.g. `lshammer_scan_gateway-url`.
+Environment variable names are `LSHAMMER_{VERB}_{OPTION}`, e.g. `LSHAMMER_SCAN_GATEWAY_URL`.
 
-Environment variable names are case-insensitive, so `lshammer_scan_application-id` is equivalent to `LSHAMMER_SCAN_APPLICATION-ID`.
+Variable names must be upper case on all platforms except for Windows. All dashes (`-`) in the OPTION must be replaced with underscores (`_`) as Linux/MacOS don't allow dashes in the environment variable name.
 
 Note that command-line arguments always take precedence over environment variables.
 
