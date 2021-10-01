@@ -78,6 +78,10 @@ namespace FM.LiveSwitch.Hammer
                                     // pass
                                     result.SetScenarioResult(scenario, ScanTestScenarioResult.Pass(scenario, certificateValidFor));
                                 }
+                                catch (NoIceServersException)
+                                {
+                                    result.SetScenarioResult(scenario, ScanTestScenarioResult.Skip(scenario, "No ICE servers."));
+                                }
                                 catch (Exception ex)
                                 {
                                     // fail
@@ -218,9 +222,17 @@ namespace FM.LiveSwitch.Hammer
             }
             Console.Error.WriteLine($"ICE gather policy: {_Connection.IceGatherPolicy}");
 
+            bool noIceServers = false;
             _Connection.OnAutomaticIceServers += (connection, automaticIceServers) =>
             {
                 FilterIceServers(automaticIceServers, scenario);
+
+                if (automaticIceServers.Count == 0 && scenario != ScanTestScenario.Host)
+                {
+                    Console.Error.WriteLine($"No ICE servers found.");
+                    noIceServers = true;
+                    connection.Close();
+                }
 
                 foreach (var automaticIceServer in automaticIceServers.Values)
                 {
@@ -239,7 +251,14 @@ namespace FM.LiveSwitch.Hammer
             // check faulted
             if (result.IsFaulted)
             {
-                throw new ConnectionOpenException("Connection could not be opened.", result.Exception);
+                if (noIceServers)
+                {
+                    throw new NoIceServersException($"No ICE servers found for {scenario.ToDisplayString()}.");
+                }
+                else
+                {
+                    throw new ConnectionOpenException("Connection could not be opened.", result.Exception);
+                }
             }
 
             if (_Connection.MediaServerId != mediaServerId)
