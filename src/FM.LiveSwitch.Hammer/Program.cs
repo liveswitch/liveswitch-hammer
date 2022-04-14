@@ -118,6 +118,11 @@ namespace FM.LiveSwitch.Hammer
                 LogException(ex);
                 return 6;
             }
+            catch(System.Net.Http.HttpRequestException ex)
+            {
+                LogException(ex);
+                return 7;
+            }
         }
 
         private static void LogException(Exception ex)
