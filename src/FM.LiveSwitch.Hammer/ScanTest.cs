@@ -200,8 +200,8 @@ namespace FM.LiveSwitch.Hammer
             }
 
             var sfuConnectionsPerCpuThreshold =
-                capacityThresholds.SfuConnectionsPerCpuThreshold ?? 
-                capacityThresholds.SafeSfuConnectionsPerCpuThreshold ?? 
+                capacityThresholds.SfuConnectionsPerCpuThreshold ??
+                capacityThresholds.SafeSfuConnectionsPerCpuThreshold ??
                 capacityThresholds.UnsafeSfuConnectionsPerCpuThreshold;
             if (sfuConnectionsPerCpuThreshold == null || sfuConnectionsPerCpuThreshold <= 0)
             {
@@ -223,32 +223,31 @@ namespace FM.LiveSwitch.Hammer
 
             var count = 0;
             var delay = 100;
-            while(true)//we either break out of the loop, or throw an exception
+            while (true)//we either break out of the loop, or throw an exception
             {
                 try
                 {
                     responseJson = await _HttpClient.GetStringAsync("v1/mediaservers").ConfigureAwait(false);
                     break;
                 }
-                catch(System.Net.Http.HttpRequestException ex)
+                catch (System.Net.Http.HttpRequestException ex)
                 {
-                    if(count <= 5)
+                    if (count <= 5)
                     {
-                        Log.Warn("Unable to retrieve media servers; retrying...", ex);
+                        Log.Warn($"Unable to retrieve Media Servers; retrying after {delay} milliseconds...", ex);
                         await Task.Delay(delay).ConfigureAwait(false);
 
                         count++;
                         delay *= 2;
-                        
                     }
                     else
                     {
-                        Log.Error("Unable to retrieve media servers; retry count exceeded.", ex);
+                        Log.Error("Unable to retrieve Media Servers; retry count exceeded.", ex);
                         throw;
                     }
-                }    
+                }
             }
-            
+
             var mediaServers = JsonConvert.DeserializeObject<MediaServerInfo[]>(responseJson);
             return mediaServers.Where(mediaServer => Options.ShouldTest(mediaServer.Id)).ToArray();
         }

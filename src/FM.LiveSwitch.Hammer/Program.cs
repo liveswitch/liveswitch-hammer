@@ -118,7 +118,7 @@ namespace FM.LiveSwitch.Hammer
                 LogException(ex);
                 return 6;
             }
-            catch(System.Net.Http.HttpRequestException ex)
+            catch (System.Net.Http.HttpRequestException ex)
             {
                 LogException(ex);
                 return 7;
