@@ -38,7 +38,7 @@ namespace FM.LiveSwitch.Hammer
                 Console.Error.WriteLine();
                 Console.Error.WriteLine($"Media Server {Options.MediaServerId} not found.");
 
-                mediaServerResults.Add(ScanTestMediaServerResult.Fail(new MediaServerInfo() { Id = Options.MediaServerId }, new Exception("Media Server not found.")));
+                mediaServerResults.Add(ScanTestMediaServerResult.Fail(new MediaServerInfo { Id = Options.MediaServerId }, new Exception("Media Server not found.")));
             }
 
             for (var i = 0; i < mediaServers.Length; i++)
