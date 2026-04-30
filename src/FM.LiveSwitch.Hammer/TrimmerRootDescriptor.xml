@@ -1,0 +1,3 @@
+<linker>
+  <assembly fullname="lshammer" preserve="all" />
+</linker>
