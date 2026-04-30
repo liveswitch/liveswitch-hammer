@@ -1,10 +1,8 @@
-﻿using CommandLine;
+using CommandLine;
 using CommandLine.Text;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Converters;
-using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
@@ -16,20 +14,6 @@ namespace FM.LiveSwitch.Hammer
     {
         static void Main(string[] args)
         {
-            JsonConvert.DefaultSettings = () =>
-            {
-                var settings = new JsonSerializerSettings
-                {
-                    NullValueHandling = NullValueHandling.Ignore,
-                    ContractResolver = new DefaultContractResolver
-                    {
-                        NamingStrategy = new CamelCaseNamingStrategy()
-                    }
-                };
-                settings.Converters.Add(new StringEnumConverter());
-                return settings;
-            };
-
             using var parser = new Parser((settings) =>
             {
                 settings.CaseInsensitiveEnumValues = true;
@@ -157,25 +141,30 @@ namespace FM.LiveSwitch.Hammer
                 return TryGetOptions(null, out environmentVariablePrefix, out options);
             }
 
-            foreach (var type in Assembly.GetExecutingAssembly().GetTypes().Where(type => !type.IsAbstract))
-            {
-                var verbAttribute = type.GetCustomAttributes<VerbAttribute>().FirstOrDefault();
-                if (verbAttribute != null)
-                {
-                    if (verb == null || verbAttribute.Name == verb)
-                    {
-                        environmentVariablePrefix = Assembly.GetExecutingAssembly().GetName().Name.ToUpperInvariant();
-                        if (verb != null)
-                        {
-                            environmentVariablePrefix = $"{environmentVariablePrefix}_{verb.ToUpperInvariant()}";
-                        }
+            if (TryGetOptionsForType<ClusterTestOptions>(verb, out environmentVariablePrefix, out options)) return true;
+            if (TryGetOptionsForType<LoadTestOptions>(verb, out environmentVariablePrefix, out options)) return true;
+            if (TryGetOptionsForType<ScanTestOptions>(verb, out environmentVariablePrefix, out options)) return true;
 
-                        options = type.GetProperties()
-                            .Select(property => property.GetCustomAttributes<OptionAttribute>().FirstOrDefault())
-                            .Where(option => option != null).ToArray();
-                        return true;
-                    }
+            environmentVariablePrefix = null;
+            options = null;
+            return false;
+        }
+
+        private static bool TryGetOptionsForType<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(
+            string verb, out string environmentVariablePrefix, out OptionAttribute[] options)
+        {
+            var verbAttribute = typeof(T).GetCustomAttributes<VerbAttribute>().FirstOrDefault();
+            if (verbAttribute != null && (verb == null || verbAttribute.Name == verb))
+            {
+                environmentVariablePrefix = Assembly.GetExecutingAssembly().GetName().Name.ToUpperInvariant();
+                if (verb != null)
+                {
+                    environmentVariablePrefix = $"{environmentVariablePrefix}_{verb.ToUpperInvariant()}";
                 }
+                options = typeof(T).GetProperties()
+                    .Select(property => property.GetCustomAttributes<OptionAttribute>().FirstOrDefault())
+                    .Where(option => option != null).ToArray();
+                return true;
             }
 
             environmentVariablePrefix = null;

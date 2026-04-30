@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Reflection;
+using System.Text.Json.Serialization;
 
 namespace FM.LiveSwitch.Hammer
 {
+    [JsonConverter(typeof(JsonStringEnumConverter<ScanTestScenario>))]
     enum ScanTestScenario
     {
         [Display(Name = "Host")]
