@@ -17,8 +17,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="FM.LiveSwitch" Version="1.25.4.18706" />
-    <PackageReference Include="FM.LiveSwitch.Opus" Version="1.25.4.18706" />
-    <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.25.4.18706" />
+    <PackageReference Include="FM.LiveSwitch" Version="1.22.2.64849" />
+    <PackageReference Include="FM.LiveSwitch.Opus" Version="1.22.2.64849" />
+    <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.22.2.64849" />
   </ItemGroup>
 </Project>
