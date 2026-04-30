@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/dotnet/sdk:3.1 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /app
 
 COPY FM.LiveSwitch.Hammer.sln FM.LiveSwitch.Hammer.sln
@@ -10,7 +10,7 @@ RUN rm -rf src
 RUN rm -rf .git
 RUN rm FM.LiveSwitch.Hammer.sln
 
-FROM mcr.microsoft.com/dotnet/runtime:3.1
+FROM mcr.microsoft.com/dotnet/runtime:8.0
 WORKDIR /app
 COPY --from=build /app/lib .
 
