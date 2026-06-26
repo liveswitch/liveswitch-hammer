@@ -54,6 +54,7 @@ namespace FM.LiveSwitch.Hammer
             var cancellationTokenSource = new CancellationTokenSource();
             _ = Task.Run(() =>
             {
+                if (Console.IsInputRedirected) return;
                 while (!cancellationTokenSource.IsCancellationRequested)
                 {
                     var key = Console.ReadKey(true);
@@ -107,11 +108,21 @@ namespace FM.LiveSwitch.Hammer
                 LogException(ex);
                 return 7;
             }
+            catch (System.Text.Json.JsonException ex)
+            {
+                LogException(ex);
+                return 8;
+            }
+            catch (Exception ex)
+            {
+                LogException(ex);
+                return -1;
+            }
         }
 
         private static void LogException(Exception ex)
         {
-            Console.Error.WriteLine($"{ex.Message} {ex.InnerException?.Message}".Trim());
+            Console.Error.WriteLine($"{ex.GetType().Name}: {ex.Message} {ex.InnerException?.Message}".Trim());
         }
 
         private static string[] AppendEnvironmentVariables(string[] args)

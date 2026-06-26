@@ -255,7 +255,8 @@ namespace FM.LiveSwitch.Hammer
                 }
             }
 
-            var mediaServers = STJ.JsonSerializer.Deserialize(responseJson, HammerJsonContext.Default.MediaServerInfoArray);
+            var mediaServers = STJ.JsonSerializer.Deserialize(responseJson, HammerJsonContext.Default.MediaServerInfoArray)
+                ?? throw new InvalidOperationException("Unexpected null response from media servers endpoint.");
             return mediaServers.Where(mediaServer => Options.ShouldTest(mediaServer.Id)).ToArray();
         }
 

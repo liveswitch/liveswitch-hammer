@@ -4,8 +4,8 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>lshammer</AssemblyName>
-    <!-- CommandLineParser uses reflection internally; suppress its assembly-level trim warning.
-         NETSDK1206 is a Tizen RID warning from SkiaSharp inside the FM.LiveSwitch SDK. -->
+    <!-- IL2104: trimmer summary warning caused by CommandLineParser not being trim-compatible.
+         NETSDK1206: version-specific RID warning from SkiaSharp in the FM.LiveSwitch SDK. -->
     <NoWarn>$(NoWarn);IL2104;NETSDK1206</NoWarn>
   </PropertyGroup>
 

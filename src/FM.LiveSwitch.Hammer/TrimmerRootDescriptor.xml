@@ -1,3 +1,10 @@
 <linker>
-  <assembly fullname="lshammer" preserve="all" />
+  <!-- CommandLineParser reads VerbAttribute/OptionAttribute and invokes constructors
+       via reflection on these types. Preserve only what it actually needs. -->
+  <assembly fullname="lshammer">
+    <type fullname="FM.LiveSwitch.Hammer.Options" preserve="all" />
+    <type fullname="FM.LiveSwitch.Hammer.ClusterTestOptions" preserve="all" />
+    <type fullname="FM.LiveSwitch.Hammer.LoadTestOptions" preserve="all" />
+    <type fullname="FM.LiveSwitch.Hammer.ScanTestOptions" preserve="all" />
+  </assembly>
 </linker>
