@@ -1,10 +1,10 @@
 # LiveSwitch Hammer CLI
 
-![build](https://github.com/liveswitch/liveswitch-hammer/workflows/build/badge.svg) ![code quality](https://app.codacy.com/project/badge/Grade/9a3b33b63b254b118fcdd80e807cba8c) ![license](https://img.shields.io/badge/License-MIT-yellow.svg) ![release](https://img.shields.io/github/v/release/liveswitch/liveswitch-hammer.svg)
+![build](https://github.com/liveswitch/liveswitch-hammer/workflows/build/badge.svg) ![license](https://img.shields.io/badge/License-MIT-yellow.svg) ![release](https://img.shields.io/github/v/release/liveswitch/liveswitch-hammer.svg)
 
 The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSwitch deployment.
 
-Requires .NET Core 3.1 or newer. Requires LiveSwitch Server 1.11.1 or newer.
+Requires .NET 8 or newer. Requires LiveSwitch Server 1.11.1 or newer.
 
 ## Building
 
@@ -12,23 +12,23 @@ Use `dotnet publish` to create a single, self-contained file for a specific plat
 
 ### Windows
 ```none
-dotnet publish -r win-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o win
+dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r win-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o win
 ```
 
 ### macOS
 ```none
-dotnet publish -r osx-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o osx
+dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r osx-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o osx
 ```
 
 ### Linux
 ```none
-dotnet publish -r linux-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o linux
+dotnet publish src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj -r linux-x64 -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o linux
 ```
 
-Alternatively, use `dotnet build` to create a platform-agnostic bundle (the .NET Core runtime must be installed):
+Alternatively, use `dotnet build` to create a platform-agnostic bundle (the .NET runtime must be installed):
 
 ```none
-dotnet build
+dotnet build src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj
 ```
 
 Using this approach will generate a library instead of an executable. Use `dotnet lshammer.dll` instead of `lshammer` to run it.

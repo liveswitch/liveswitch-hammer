@@ -28,6 +28,11 @@ x86/
 bld/
 [Bb]in/
 [Oo]bj/
+
+# Publish output directories
+osx/
+linux/
+win/
 [Ll]og/
 [Ll]ogs/
 

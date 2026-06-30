@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using STJ = System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,11 +75,9 @@ namespace FM.LiveSwitch.Hammer
 
             Console.Error.WriteLine();
             Console.Error.WriteLine("Writing test results to standard output...");
-            Console.WriteLine(JsonConvert.SerializeObject(new
-            {
-                failed = failedMediaServerResults,
-                expiring = expiringMediaServerResults
-            }));
+            Console.WriteLine(STJ.JsonSerializer.Serialize(
+                new ScanTestOutput { Failed = failedMediaServerResults, Expiring = expiringMediaServerResults },
+                HammerJsonContext.Default.ScanTestOutput));
         }
 
         private async Task<ScanTestMediaServerResult> Scan(string mediaServerId, CancellationToken cancellationToken)
@@ -257,7 +255,8 @@ namespace FM.LiveSwitch.Hammer
                 }
             }
 
-            var mediaServers = JsonConvert.DeserializeObject<MediaServerInfo[]>(responseJson);
+            var mediaServers = STJ.JsonSerializer.Deserialize(responseJson, HammerJsonContext.Default.MediaServerInfoArray)
+                ?? throw new InvalidOperationException("Unexpected null response from media servers endpoint.");
             return mediaServers.Where(mediaServer => Options.ShouldTest(mediaServer.Id)).ToArray();
         }
 
@@ -269,7 +268,7 @@ namespace FM.LiveSwitch.Hammer
         private async Task<DeploymentConfig> GetDeploymentConfig(string deploymentId)
         {
             var responseJson = await _HttpClient.GetStringAsync($"v2/DeploymentConfig({deploymentId})").ConfigureAwait(false);
-            return JsonConvert.DeserializeObject<DeploymentConfig>(responseJson);
+            return STJ.JsonSerializer.Deserialize(responseJson, HammerJsonContext.Default.DeploymentConfig);
         }
     }
 }

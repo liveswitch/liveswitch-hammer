@@ -1,4 +1,4 @@
-﻿using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace FM.LiveSwitch.Hammer
 {
@@ -18,6 +18,7 @@ namespace FM.LiveSwitch.Hammer
 
         public bool Draining { get; set; }
 
+        [JsonPropertyName("ipAddresses")]
         public string[] IPAddresses { get; set; }
 
         public string PublicIPAddress { get; set; }
