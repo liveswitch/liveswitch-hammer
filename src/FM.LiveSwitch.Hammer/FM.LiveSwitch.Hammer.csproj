@@ -19,8 +19,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="FM.LiveSwitch" Version="1.22.2.64849" />
-    <PackageReference Include="FM.LiveSwitch.Opus" Version="1.22.2.64849" />
-    <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.22.2.64849" />
+    <PackageReference Include="FM.LiveSwitch" Version="1.27.0.22319" />
+    <PackageReference Include="FM.LiveSwitch.Opus" Version="1.27.0.22319" />
+    <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.27.0.22319" />
   </ItemGroup>
 </Project>
