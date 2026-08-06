@@ -4,6 +4,9 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <AssemblyName>lshammer</AssemblyName>
+    <!-- Tracks the FM.LiveSwitch SDK version below. Bump in the same commit that gets
+         tagged for release; see "Releases" in README.md. -->
+    <Version>1.27.0</Version>
     <!-- IL2104: trimmer summary warning caused by CommandLineParser not being trim-compatible.
          NETSDK1206: version-specific RID warning from SkiaSharp in the FM.LiveSwitch SDK. -->
     <NoWarn>$(NoWarn);IL2104;NETSDK1206</NoWarn>
@@ -15,10 +18,6 @@
 
   <ItemGroup>
     <PackageReference Include="CommandLineParser" Version="2.9.1" />
-    <PackageReference Include="GitVersion.MsBuild" Version="6.7.0">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="FM.LiveSwitch" Version="1.27.0.22319" />
     <PackageReference Include="FM.LiveSwitch.Opus" Version="1.27.0.22319" />
     <PackageReference Include="FM.LiveSwitch.Vpx" Version="1.27.0.22319" />
