@@ -6,6 +6,26 @@ The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSw
 
 Requires .NET 8 or newer. Requires LiveSwitch Server 1.11.1 or newer.
 
+## Releases
+
+Releases are tagged in git so a specific version of the CLI can be pinned. Tag names track the version of the LiveSwitch SDK the CLI was built against:
+
+| Tag | Meaning |
+| --- | --- |
+| `v1.27.0` | Built against LiveSwitch SDK 1.27.0 |
+| `v1.27.0.1` | Fixes or improvements to the CLI, still built against LiveSwitch SDK 1.27.0 |
+| `v1.27.1` | Built against LiveSwitch SDK 1.27.1 |
+
+The first three components always match the SDK. A fourth component, when present, counts changes to the CLI itself between SDK releases.
+
+`lshammer --version` reports the version followed by the commit it was built from, for example `1.27.0+0f5d9cb`. A build taken from `master` rather than a tag reports the version of the most recent release, so the commit hash is what identifies it precisely.
+
+To build a specific release:
+
+```none
+git checkout v1.27.0
+```
+
 ## Building
 
 Use `dotnet publish` to create a single, self-contained file for a specific platform/architecture:
