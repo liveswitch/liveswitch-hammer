@@ -4,7 +4,7 @@
 
 The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSwitch deployment.
 
-Requires .NET 8 or newer. Requires LiveSwitch Server 1.11.1 or newer.
+Requires .NET 10 or newer. Requires LiveSwitch Server 1.11.1 or newer.
 
 ## Releases
 
@@ -18,13 +18,28 @@ Releases are tagged in git so a specific version of the CLI can be pinned. Tag n
 
 The first three components always match the SDK. A fourth component, when present, counts changes to the CLI itself between SDK releases.
 
-`lshammer --version` reports the version followed by the commit it was built from, for example `1.27.0+0f5d9cb`. A build taken from `master` rather than a tag reports the version of the most recent release, so the commit hash is what identifies it precisely.
+`lshammer --version` reports the same version as the tag it was built from, for example `1.27.0`. A build from `master` between releases reports the version in `<Version>` in `FM.LiveSwitch.Hammer.csproj`, which is the next release.
 
 To build a specific release:
 
 ```none
 git checkout v1.27.0
 ```
+
+Release binaries and zip archives are attached to each GitHub Release.
+
+### Release steps
+
+1. On a release branch, set `<Version>` in `src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj` to the release version. For an SDK release, the first three components match `<LiveSwitchSdkVersion>` (for example `1.27.0`). For a CLI-only fix, append a fourth component (for example `1.27.0.1`).
+2. Merge to `master`.
+3. Tag the merge commit with `v` followed by the version, and push the tag:
+
+   ```none
+   git tag v1.27.0
+   git push origin v1.27.0
+   ```
+
+4. The `release` workflow checks that the tag matches `<Version>` and that the SDK release prefix matches `<LiveSwitchSdkVersion>`. If either check fails, no release is created. If both pass, it publishes the win-x64, osx-x64, and linux-x64 binaries and creates a GitHub Release with them attached.
 
 ## Building
 

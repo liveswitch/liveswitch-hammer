@@ -1,0 +1,47 @@
+name: release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: 10.0.x
+    - name: Check tag matches project version
+      run: |
+        PROJECT=src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj
+        VERSION=$(dotnet msbuild "$PROJECT" -getProperty:Version)
+        SDK=$(dotnet msbuild "$PROJECT" -getProperty:LiveSwitchSdkVersion)
+        TAG="${GITHUB_REF_NAME#v}"
+        echo "Tag: $TAG  Project version: $VERSION  SDK: $SDK"
+        if [ "$TAG" != "$VERSION" ]; then
+          echo "::error::Tag $GITHUB_REF_NAME does not match project version $VERSION"
+          exit 1
+        fi
+        # The CLI version must start with the SDK release it is built against (1.27.0.22319 -> 1.27.0).
+        if [ "$(echo "$VERSION" | cut -d. -f1-3)" != "$(echo "$SDK" | cut -d. -f1-3)" ]; then
+          echo "::error::Project version $VERSION does not match SDK release $SDK"
+          exit 1
+        fi
+    - name: Publish
+      run: |
+        PROJECT=src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj
+        for RID in win-x64 osx-x64 linux-x64; do
+          dotnet publish "$PROJECT" -r "$RID" -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o "artifacts/$RID"
+          (cd "artifacts/$RID" && zip -qr "../lshammer-$GITHUB_REF_NAME-$RID.zip" .)
+        done
+    - name: Create GitHub Release
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: gh release create "$GITHUB_REF_NAME" artifacts/lshammer-*.zip --title "$GITHUB_REF_NAME" --generate-notes
