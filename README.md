@@ -4,7 +4,42 @@
 
 The LiveSwitch Hammer CLI lets you run specific automated tests against a LiveSwitch deployment.
 
-Requires .NET 8 or newer. Requires LiveSwitch Server 1.11.1 or newer.
+Building requires the .NET 10 SDK. The release binaries are self-contained and need no .NET runtime. Requires LiveSwitch Server 1.11.1 or newer.
+
+## Releases
+
+Releases are tagged in git so a specific version of the CLI can be pinned. Tag names track the version of the LiveSwitch SDK the CLI was built against:
+
+| Tag | Meaning |
+| --- | --- |
+| `v1.27.0` | Built against LiveSwitch SDK 1.27.0 |
+| `v1.27.0.1` | Fixes or improvements to the CLI, still built against LiveSwitch SDK 1.27.0 |
+| `v1.27.1` | Built against LiveSwitch SDK 1.27.1 |
+
+The first three components always match the SDK. A fourth component, when present, counts changes to the CLI itself between SDK releases.
+
+`lshammer --version` prints the version to stdout, for example `lshammer 1.27.0`. A release build reports the same version as its tag. A build from `master` between releases reports the version in `<Version>` in `FM.LiveSwitch.Hammer.csproj` followed by the commit it was built from, for example `1.27.0+0f5d9cb`.
+
+To build a specific release:
+
+```none
+git checkout v1.27.0
+```
+
+Each GitHub Release has a zip archive per platform (win-x64, osx-x64, linux-x64) attached.
+
+### Release steps
+
+1. On a branch, set `<Version>` in `src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj` to the release version. For an SDK release, the first three components match `<LiveSwitchSdkVersion>` (for example `1.27.0`). For a CLI-only fix, append a fourth component (for example `1.27.0.1`).
+2. Merge to `master`. Release tags must point at a commit on `master`.
+3. Tag the merge commit with `v` followed by the version, and push the tag:
+
+   ```none
+   git tag v1.27.0
+   git push origin v1.27.0
+   ```
+
+4. The `release` workflow checks that the tagged commit is on `master` and that the tag matches `<Version>`. `scripts/check-version.sh` also checks that the SDK release prefix matches `<LiveSwitchSdkVersion>`; the `build` workflow runs the same check on every PR. If any check fails, no release is created. If all pass, it publishes the win-x64, osx-x64, and linux-x64 binaries and creates a GitHub Release with the zip archives attached.
 
 ## Building
 

@@ -13,12 +13,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 8.0.x
+        dotnet-version: 10.0.x
+    - name: Check version matches SDK release
+      run: scripts/check-version.sh
     - name: Install dependencies
       run: dotnet restore
     - name: Build library

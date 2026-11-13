@@ -17,7 +17,7 @@ namespace FM.LiveSwitch.Hammer
             using var parser = new Parser((settings) =>
             {
                 settings.CaseInsensitiveEnumValues = true;
-                settings.HelpWriter = null;
+                settings.HelpWriter = Console.Out;
             });
 
             var result = parser.ParseArguments<
@@ -41,6 +41,12 @@ namespace FM.LiveSwitch.Hammer
                 },
                 errors =>
                 {
+                    // Help and version were already written to stdout by the parser.
+                    if (errors.Any(e => e.Tag is ErrorType.HelpRequestedError or ErrorType.VersionRequestedError))
+                    {
+                        return 0;
+                    }
+
                     var helpText = HelpText.AutoBuild(result);
                     helpText.Copyright = "Copyright (C) 2020 Frozen Mountain Software Ltd.";
                     helpText.AddEnumValuesToHelpText = true;
