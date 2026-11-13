@@ -4,44 +4,63 @@ on:
   push:
     tags: [ 'v*' ]
 
+# Read-only by default. Only the release job below can write.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  build:
 
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        # Full history so the tagged commit can be checked against master.
+        fetch-depth: 0
+        persist-credentials: false
+    - name: Require tagged commit to be on master
+      run: |
+        if ! git merge-base --is-ancestor "$GITHUB_SHA" origin/master; then
+          echo "::error::$GITHUB_REF_NAME is not on master"
+          exit 1
+        fi
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: 10.0.x
     - name: Check tag matches project version
-      run: |
-        PROJECT=src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj
-        VERSION=$(dotnet msbuild "$PROJECT" -getProperty:Version)
-        SDK=$(dotnet msbuild "$PROJECT" -getProperty:LiveSwitchSdkVersion)
-        TAG="${GITHUB_REF_NAME#v}"
-        echo "Tag: $TAG  Project version: $VERSION  SDK: $SDK"
-        if [ "$TAG" != "$VERSION" ]; then
-          echo "::error::Tag $GITHUB_REF_NAME does not match project version $VERSION"
-          exit 1
-        fi
-        # The CLI version must start with the SDK release it is built against (1.27.0.22319 -> 1.27.0).
-        if [ "$(echo "$VERSION" | cut -d. -f1-3)" != "$(echo "$SDK" | cut -d. -f1-3)" ]; then
-          echo "::error::Project version $VERSION does not match SDK release $SDK"
-          exit 1
-        fi
+      run: scripts/check-version.sh "$GITHUB_REF_NAME"
     - name: Publish
       run: |
         PROJECT=src/FM.LiveSwitch.Hammer/FM.LiveSwitch.Hammer.csproj
         for RID in win-x64 osx-x64 linux-x64; do
-          dotnet publish "$PROJECT" -r "$RID" -c Release /p:PublishSingleFile=true /p:PublishTrimmed=true -o "artifacts/$RID"
-          (cd "artifacts/$RID" && zip -qr "../lshammer-$GITHUB_REF_NAME-$RID.zip" .)
+          # Release builds report the bare version, without a commit suffix.
+          dotnet publish "$PROJECT" -r "$RID" -c Release \
+            /p:IncludeSourceRevisionInInformationalVersion=false \
+            /p:PublishSingleFile=true /p:PublishTrimmed=true -o "artifacts/$RID"
+          (cd "artifacts/$RID" && zip -qr "../../lshammer-$GITHUB_REF_NAME-$RID.zip" .)
         done
+    - name: Upload release archives
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-archives
+        path: lshammer-*.zip
+
+  release:
+
+    needs: build
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        name: release-archives
     - name: Create GitHub Release
       env:
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: gh release create "$GITHUB_REF_NAME" artifacts/lshammer-*.zip --title "$GITHUB_REF_NAME" --generate-notes
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+      run: gh release create "$GITHUB_REF_NAME" lshammer-*.zip --title "$GITHUB_REF_NAME" --generate-notes

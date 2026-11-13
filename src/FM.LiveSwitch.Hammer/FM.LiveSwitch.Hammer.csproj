@@ -10,8 +10,6 @@
          and the fourth counts CLI-only changes; see "Releases" in README.md. The release
          workflow fails if the tag does not match this value. -->
     <Version>1.27.0</Version>
-    <!-- Keep the version output identical to the release tag. Without this the SDK appends a commit hash. -->
-    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <!-- IL2104: trimmer summary warning caused by CommandLineParser not being trim-compatible.
          NETSDK1206: version-specific RID warning from SkiaSharp in the FM.LiveSwitch SDK. -->
     <NoWarn>$(NoWarn);IL2104;NETSDK1206</NoWarn>
